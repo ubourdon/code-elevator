@@ -2,7 +2,7 @@ package controllers
 
 import play.api.mvc._
 import play.api.libs.concurrent._
-import actor.{RetrievePlayersInfo, RetrievePlayer, Register}
+import actor.{RetrievePlayersInfo, RetrievePlayerInfo, Register}
 import model.{PlayerInfo, PlayerJsonSerializer, Player}
 import akka.pattern.ask
 
@@ -26,7 +26,7 @@ object PlayersController extends Controller with PlayerJsonSerializer {
 
     def info(email: String) = Action.async {
         implicit val timeout = Timeout(3 seconds)
-        val future: Future[Option[Player]] = (playersActor ? RetrievePlayer(email)).asInstanceOf[Future[Option[Player]]]
+        val future = (playersActor ? RetrievePlayerInfo(email)).asInstanceOf[Future[Option[PlayerInfo]]]
         future.map { maybePlayer =>
             maybePlayer match {
                 case Some(player) => Ok(Json.toJson(player))

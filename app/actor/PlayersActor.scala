@@ -9,7 +9,7 @@ class PlayersActor extends Actor with ActorLogging {
     def receive = {
         case Register(player) => players = players + player; log.info(s"user register : ${players.size}")
 
-        case RetrievePlayer(email) => sender ! players.find(p => p.email == email)
+        case RetrievePlayerInfo(email) => sender ! players.find(p => p.email == email).map( new PlayerInfo(_) )
 
         case RetrievePlayersInfo => sender ! players.map { player => new PlayerInfo(player) }
 
@@ -18,5 +18,5 @@ class PlayersActor extends Actor with ActorLogging {
 }
 
 case class Register(player: Player)
-case class RetrievePlayer(email: String)
+case class RetrievePlayerInfo(email: String)
 case object RetrievePlayersInfo
