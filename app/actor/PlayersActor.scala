@@ -11,7 +11,7 @@ class PlayersActor extends Actor with ActorLogging {
 
         case RetrievePlayer(email) => sender ! players.find(p => p.email == email)
 
-        case RetrievePlayersInfo => sender ! players.map { player => PlayerInfo(player.pseudo, player.email, 0L, Array(0, 0, 3, 5, 2, 0), 2, 1, false, "last error message", "RESUME") } // TODO WTF
+        case RetrievePlayersInfo => sender ! players.map { player => new PlayerInfo(player) }
 
         case _ => log.warning("unknow message send !")
     }
