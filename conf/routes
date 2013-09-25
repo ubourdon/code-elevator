@@ -6,8 +6,9 @@
 GET     /                                    controllers.Application.index
 
 # Player controller
-POST    /resources/player/register           controllers.Players.register(email: String, pseudo: String, serverURL: String)
-GET     /resources/player/info               controllers.Players.info(email: String)
+POST    /resources/player/register           controllers.PlayersController.register(email: String, pseudo: String, serverURL: String)
+GET     /resources/player/info               controllers.PlayersController.info(email: String)
+# GET     /resources/leaderboard               controllers.PlayersController.leaderboard
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                        controllers.Assets.at(path="/public", file)

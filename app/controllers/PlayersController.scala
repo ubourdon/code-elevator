@@ -2,8 +2,8 @@ package controllers
 
 import play.api.mvc._
 import play.api.libs.concurrent._
-import actor.{RetrievePlayer, Register}
-import model.{PlayerJsonSerializer, Player}
+import actor.{RetrievePlayersInfo, RetrievePlayer, Register}
+import model.{PlayerInfo, PlayerJsonSerializer, Player}
 import akka.pattern.ask
 
 import play.api.Play.current
@@ -13,7 +13,7 @@ import concurrent.duration._
 import play.api.libs.json.Json
 import concurrent.ExecutionContext.Implicits.global
 
-object Players extends Controller with PlayerJsonSerializer {
+object PlayersController extends Controller with PlayerJsonSerializer {
     private val akkaSystem = Akka.system
     private lazy val playersActor = akkaSystem.actorSelection(akkaSystem / "players")
 
@@ -33,6 +33,13 @@ object Players extends Controller with PlayerJsonSerializer {
                 case None => NotFound("player not found !")
             }
         }
+    }
+
+    def leaderboard = Action.async {
+        implicit val timeout = Timeout(3 seconds)
+        val future: Future[Set[PlayerInfo]] = (playersActor ? RetrievePlayersInfo).asInstanceOf[Future[Set[PlayerInfo]]]
+
+        future.map { playersInfo => Ok(Json.toJson(playersInfo)) }
     }
 
     private def generatePassword: String = "toto"
