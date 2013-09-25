@@ -8,7 +8,9 @@ class PlayersActor extends Actor with ActorLogging {
 
     def receive = {
         case Register(player) => players = players + player; log.info(s"user register : ${players.size}")
+
         case RetrievePlayer(email) => sender ! players.find(p => p.email == email)
+
         case _ => log.warning("unknow message send !")
     }
 }
