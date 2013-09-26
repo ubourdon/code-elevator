@@ -1,13 +1,8 @@
 package actor
 
 import akka.actor._
-import model.{PlayerInfo, Player}
-import play.api.libs.concurrent.Akka
 import model.Player
 import model.PlayerInfo
-import actor.LaunchGame
-import actor.Register
-import actor.RetrievePlayerInfo
 
 class PlayersActor extends Actor with ActorLogging {
 
@@ -20,7 +15,7 @@ class PlayersActor extends Actor with ActorLogging {
         case Register(player, serverUrl) => {
             players = players + player
             log.info(s"user register : ${players.size}")
-            // TODO refuser un nouveau jouer si email déjà pris
+            // TODO refuser un nouveau joueur si email déjà pris
 
             playerEngines = playerEngines + createEngine(player, serverUrl)
         }
@@ -34,7 +29,8 @@ class PlayersActor extends Actor with ActorLogging {
         case _ => log.warning("unknow message send !")
     }
 
-    private def createEngine(player: Player, serverUrl: String): ActorRef = system.actorOf(Props(new EngineActor(player, serverUrl)), name=s"engine-${player.email}")
+    private def createEngine(player: Player, serverUrl: String): ActorRef =
+        system.actorOf(Props(new EngineActor(player, serverUrl)), name=s"engine-${player.email}")
 }
 
 case class Register(player: Player, serverUrl: String)
