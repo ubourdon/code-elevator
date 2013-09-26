@@ -1,4 +1,45 @@
-This is your new Play application
-=====================================
+Code Elevator
+=============
 
-This file will be packaged with your application, when using `play dist`.
+This project is a live coding contest.
+
+Rules
+-----
+
+The goal of the game is to implement an elevator engine. Participants have to subscribe with a login, an email (in order
+to display a linked [gravatar](http://www.gravatar.com)) and a server url. Then HTTP GET requests will be send to this
+server :
+
+### events (just respond HTTP 200 return code)
+
+- `/call?atFloor=[0-5]&to=[UP|DOWN]`
+- `/go?floorToGo=[0-5]`
+- `/userHasEntered`
+- `/userHasExited`
+- `/reset?cause=information+message`
+
+### response
+
+- `/nextCommand` : body of the request must contains `NOTHING`, `UP`, `DOWN`, `OPEN` or `CLOSE`
+
+Prerequisites
+-------------
+
+Here is what you need to build and run a code elevator session :
+
+- JDK 1.6 / 1.7
+- play 2.2.0
+
+Steps
+-----
+
+    $ git clone git@github.com:ubourdon/code-elevator.git
+    $ cd code-elevator
+    $ play run
+
+Go to [http://localhost:9000](http://localhost:9000), subscribe to a session and start implementing your participant
+server.
+
+Once already is ok for all participants, you should increase max number of users per building which is zero at first. To
+perform this go to [http://localhost:9000/#/administration](http://localhost:9000/#/administration), log in with user
+`admin` and password which has been logged out on standard output of server.

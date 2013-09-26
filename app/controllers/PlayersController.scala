@@ -19,7 +19,7 @@ object PlayersController extends Controller with PlayerJsonSerializer {
 
     def register(email: String, pseudo: String, serverUrl: String) = Action {
         val password = generatePassword
-        playersActor ! Register(Player(email, pseudo, generatePassword))
+        playersActor ! Register(Player(email, pseudo, generatePassword), serverUrl)
 
         Ok(password)
     }
