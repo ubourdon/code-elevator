@@ -2,8 +2,8 @@ package model
 
 case class Player(email: String, pseudo: String, password: String)
 
-case class PlayerInfo(pseudo: String, email: String, score: Long, peopleWaitingTheElevator: Array[Int], elevatorAtFloor: Int, peopleInTheElevator: Int, doorIsOpen: Boolean, lastErrorMessage: String, state: String) {
-    def this(player: Player) = this(player.pseudo, player.email, 0L, Array(0, 0, 3, 5, 2, 0), 2, 1, false, "last error message", "RESUME")
+case class PlayerInfo(pseudo: String, email: String, score: Long, peopleWaitingTheElevator: List[Int], elevatorAtFloor: Int, peopleInTheElevator: Int, doorIsOpen: Boolean, lastErrorMessage: String, state: String) {
+    def this(player: Player) = this(player.pseudo, player.email, 0L, List(0, 0, 3, 5, 2, 0), 2, 1, false, "last error message", "RESUME")
 }
 
 

@@ -4,12 +4,9 @@ import akka.actor._
 import model.Player
 import model.PlayerInfo
 
-class PlayersActor extends Actor with ActorLogging {
+class PlayersActor(private var players: Set[Player] = Set(), private var playerEngines: Set[ActorRef] = Set()) extends Actor with ActorLogging {
 
     private val system = context.system
-
-    private var players: Set[Player] = Set()
-    private var playerEngines: Set[ActorRef] = Set()
 
     def receive = {
         case Register(player, serverUrl) => {
@@ -24,7 +21,7 @@ class PlayersActor extends Actor with ActorLogging {
 
         case RetrievePlayersInfo => sender ! players.map { player => new PlayerInfo(player) }
 
-        case Tick => playerEngines.foreach { playerEngine => playerEngine ! Tick }
+        case Tick => println(playerEngines.size); playerEngines.foreach { playerEngine => playerEngine ! Tick }
 
         case _ => log.warning("unknow message send !")
     }
