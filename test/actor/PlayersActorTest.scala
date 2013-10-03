@@ -15,9 +15,8 @@ class PlayersActorTest extends TestKit(ActorSystem("test")) with FunSuite with S
                        with BeforeAndAfterAll with BeforeAndAfter with MockitoSugar with ImplicitSender {
 
     override def afterAll() { system.shutdown() }
-    after {  }
 
-    test("playerActor ! RetrievePlayerInfo should return expected PalyerInfo") {
+    test("playerActor ! RetrievePlayerInfo should return expected PlayerInfo") {
         val player = Player("email", "pseudo", "password")
         val playerActor = TestActorRef(new PlayersActor(Set(player)))
 

@@ -1,7 +1,7 @@
 package actor
 
 import akka.actor.{Actor, ActorLogging}
-import model.Player
+import model.{Building, Player}
 import play.api.libs.ws.WS
 import concurrent.ExecutionContext.Implicits.global
 
@@ -10,24 +10,29 @@ import concurrent.ExecutionContext.Implicits.global
  *    l'utilisateur à un étage d'origine et une destination
  *    dès qu'il entre dans l'immeuble il demande UP | DOWN
  */
-class EngineActor(private val player: Player, private val serverUrl: String) extends Actor with ActorLogging {
-    private val maxFloor = 5
-
-    private var floor: Int = 0
-    private var doorIsOpened = false
+class EngineActor(private val player: Player,
+                  private val serverUrl: String,
+                  private val building: Building = Building()) extends Actor with ActorLogging {
 
     def receive = {
         case Tick =>
+            building.addUser()
+            // try to add user in building
+                // add into Building
+                // /call
+            // update engine state => /nextCommand
+            // validate nextCommand
+            // ???
             val playerResponse = WS.url(s"$serverUrl/nextCommand").get()
             playerResponse onSuccess { case response =>
                 // TODO implémenter toutes les commandes = changer l'état de l'engine
                 // TODO renseigner PlayerInfo pour que l'état bouge sur le board player
                 NextCommand(response.body) match {
-                    case UP => if(floor < maxFloor) floor = floor + 1
-                    case DOWN => if(floor > 0) floor = floor - 1
-                    case OPEN =>
-                    case CLOSE =>
-                    case NOTHING => // on fait rien
+                    case UP => building.up()
+                    case DOWN => building.down()
+                    case OPEN => building.open()
+                    case CLOSE => building.close()
+                    case NOTHING => log.info("nothing")
                     case UNKNNOW_COMMAND => log.error("unknown command !")
                 }
             }
@@ -39,11 +44,12 @@ class EngineActor(private val player: Player, private val serverUrl: String) ext
 sealed trait NextCommand
 object NextCommand {
     def apply(state: String): NextCommand = {
-        if(state.equalsIgnoreCase("NOTHING")) NOTHING
-        else if(state.equalsIgnoreCase("UP")) UP
-        else if(state.equalsIgnoreCase("DOWN")) DOWN
-        else if(state.equalsIgnoreCase("OPEN")) OPEN
-        else if(state.equalsIgnoreCase("CLOSE")) CLOSE
+        val trim = state.trim
+        if(trim.equalsIgnoreCase("NOTHING")) NOTHING
+        else if(trim.equalsIgnoreCase("UP")) UP
+        else if(trim.equalsIgnoreCase("DOWN")) DOWN
+        else if(trim.equalsIgnoreCase("OPEN")) OPEN
+        else if(trim.equalsIgnoreCase("CLOSE")) CLOSE
         else UNKNNOW_COMMAND
     }
 }
@@ -55,4 +61,5 @@ case object OPEN extends NextCommand
 case object CLOSE extends NextCommand
 case object UNKNNOW_COMMAND extends NextCommand
 
+// ???
 case class LaunchGame(player: Player)
