@@ -1,7 +1,7 @@
 package actor
 
 import akka.actor.{Actor, ActorLogging}
-import model.{Building, Player}
+import model.{PlayerInfo, Building, Player}
 import play.api.libs.ws.WS
 import concurrent.ExecutionContext.Implicits.global
 
@@ -12,30 +12,26 @@ import concurrent.ExecutionContext.Implicits.global
  */
 class EngineActor(private val player: Player,
                   private val serverUrl: String,
-                  private val building: Building = Building()) extends Actor with ActorLogging {
+                  private var building: Building = Building()) extends Actor with ActorLogging {
+
+    private val playersActor = context.system.actorSelection(context.system / "players")
 
     def receive = {
         case Tick =>
             building.addUser()
-            // try to add user in building
-                // add into Building
-                // /call
-            // update engine state => /nextCommand
-            // validate nextCommand
-            // ???
             val playerResponse = WS.url(s"$serverUrl/nextCommand").get()
 
             playerResponse onSuccess { case response =>
-                // TODO implémenter toutes les commandes = changer l'état de l'engine
-                // TODO renseigner PlayerInfo pour que l'état bouge sur le board player
                 NextCommand(response.body) match {
-                    case UP => building.up()
-                    case DOWN => building.down()
-                    case OPEN => building.open()
-                    case CLOSE => building.close()
+                    case UP => building = building.up()
+                    case DOWN => building = building.down()
+                    case OPEN => building = building.open()
+                    case CLOSE => building = building.close()
                     case NOTHING => log.info("nothing")
                     case UNKNNOW_COMMAND => log.error("unknown command !")
                 }
+
+                playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
             }
 
         case _ => log.warning("unknow message send !")

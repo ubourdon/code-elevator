@@ -34,3 +34,4 @@ case class Register(player: Player, serverUrl: String)
 case class RetrievePlayerInfo(email: String)
 case object RetrievePlayersInfo
 case object Tick
+case class UpdatePlayerInfo(playerInfo: PlayerInfo)
