@@ -4,24 +4,26 @@ import akka.actor._
 import model.Player
 import model.PlayerInfo
 
-class PlayersActor(private var players: Set[Player] = Set(), private var playerEngines: Set[ActorRef] = Set()) extends Actor with ActorLogging {
+class PlayersActor(private var players: Set[PlayerInfo] = Set(), private var playerEngines: Set[ActorRef] = Set()) extends Actor with ActorLogging {
 
     private val system = context.system
 
     def receive = {
         case Register(player, serverUrl) => {
-            players = players + player
+            players = players + new PlayerInfo(player)
             log.info(s"user register : ${players.size}")
             // TODO refuser un nouveau joueur si email déjà pris
 
             playerEngines = playerEngines + createEngine(player, serverUrl)
         }
 
-        case RetrievePlayerInfo(email) => sender ! players.find(p => p.email == email).map( new PlayerInfo(_) )
+        case RetrievePlayerInfo(email) => sender ! players.find(p => p.email == email)
 
-        case RetrievePlayersInfo => sender ! players.map { player => new PlayerInfo(player) }
+        case RetrievePlayersInfo => sender ! players
 
-        case Tick => println(playerEngines.size); playerEngines.foreach { playerEngine => playerEngine ! Tick }
+        case Tick => playerEngines.foreach { playerEngine => playerEngine ! Tick }
+
+        case UpdatePlayerInfo(playerInfo) => players = players.filter( p => p.email != playerInfo.email ) + playerInfo
 
         case _ => log.warning("unknow message send !")
     }

@@ -16,9 +16,9 @@ class PlayersActorTest extends TestKit(ActorSystem("test")) with FunSuite with S
 
     override def afterAll() { system.shutdown() }
 
-    test("playerActor ! RetrievePlayerInfo should return expected PlayerInfo") {
+    test("playersActor ! RetrievePlayerInfo should return expected PlayerInfo") {
         val player = Player("email", "pseudo", "password")
-        val playerActor = TestActorRef(new PlayersActor(Set(player)))
+        val playerActor = TestActorRef(new PlayersActor(Set(new PlayerInfo(player))))
 
         implicit val timeout = Timeout(300)
         val result = (playerActor ? RetrievePlayerInfo(player.email)).asInstanceOf[Future[Option[PlayerInfo]]]
@@ -26,9 +26,9 @@ class PlayersActorTest extends TestKit(ActorSystem("test")) with FunSuite with S
         Await.result(result, 1 second) should be (Option(new PlayerInfo(player)))
     }
 
-    test("playerActor ! RetrievePlayersInfo should return expected Set[PlayerInfo]") {
+    test("playersActor ! RetrievePlayersInfo should return expected Set[PlayerInfo]") {
         val player = Player("email", "pseudo", "password")
-        val playerActor = TestActorRef(new PlayersActor(Set(player)))
+        val playerActor = TestActorRef(new PlayersActor(Set(new PlayerInfo(player))))
 
         implicit val timeout = Timeout(300)
         val result = (playerActor ? RetrievePlayersInfo).asInstanceOf[Future[Set[PlayerInfo]]]
@@ -36,7 +36,7 @@ class PlayersActorTest extends TestKit(ActorSystem("test")) with FunSuite with S
         Await.result(result, 1 second) should be (Set(new PlayerInfo(player)))
     }
 
-    test("playerActor ! Register should add one player") {
+    test("playersActor ! Register should add one player") {
         val player = Player("email", "pseudo", "password")
 
         val playerActor = TestActorRef(new PlayersActor())
@@ -48,7 +48,7 @@ class PlayersActorTest extends TestKit(ActorSystem("test")) with FunSuite with S
         Await.result(result, 1 second) should be (Option(new PlayerInfo(player)))
     }
 
-    test("playerActor ! Register should create EngineActor") {
+    test("playersActor ! Register should create EngineActor") {
         val player = Player("email1", "pseudo", "password")
 
         val playerActor = TestActorRef(new PlayersActor())
@@ -58,7 +58,7 @@ class PlayersActorTest extends TestKit(ActorSystem("test")) with FunSuite with S
         actor.toString() should include ("engine-email1")
     }
 
-    test("when playerActor ! Tick should send Tick message to engineActor(s) registered in playerActor") {
+    test("when playersActor ! Tick should send Tick message to engineActor(s) registered in playerActor") {
         val engineStub1 = TestProbe()
         val engineStub2 = TestProbe()
 
@@ -68,5 +68,19 @@ class PlayersActorTest extends TestKit(ActorSystem("test")) with FunSuite with S
 
         engineStub1.expectMsg(1 second, Tick)
         engineStub2.expectMsg(1 second, Tick)
+    }
+
+    test("when playersActor ! UpdatePlayerInfo should update PlayerInfo") {
+        val player1 = Player("email", "pseudo1", "password1")
+        val player2 = Player("email", "pseudo2", "password2")
+
+        val playerActor = TestActorRef(new PlayersActor(players = Set(new PlayerInfo(player1))))
+
+        playerActor ! UpdatePlayerInfo(new PlayerInfo(player2))
+
+        implicit val timeout = Timeout(300)
+        val result = (playerActor ? RetrievePlayersInfo).asInstanceOf[Future[Set[PlayerInfo]]]
+
+        Await.result(result, 1 second) should be (Set(new PlayerInfo(player2)))
     }
 }
