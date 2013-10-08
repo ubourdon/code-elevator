@@ -24,6 +24,7 @@ class EngineActor(private val player: Player,
             // validate nextCommand
             // ???
             val playerResponse = WS.url(s"$serverUrl/nextCommand").get()
+
             playerResponse onSuccess { case response =>
                 // TODO implémenter toutes les commandes = changer l'état de l'engine
                 // TODO renseigner PlayerInfo pour que l'état bouge sur le board player
@@ -60,6 +61,3 @@ case object DOWN extends NextCommand
 case object OPEN extends NextCommand
 case object CLOSE extends NextCommand
 case object UNKNNOW_COMMAND extends NextCommand
-
-// ???
-case class LaunchGame(player: Player)

@@ -4,7 +4,9 @@ case class Building() {
     /*private val maxFloor = 5
 
     private var floor: Int = 0
-    private var doorIsOpened = false*/
+    private var doorIsOpened = false
+    score: Int
+    */
 
     def addUser(): Unit = ()
     def up(): Unit = ()                                   /*if(floor < maxFloor) floor = floor + 1$*/

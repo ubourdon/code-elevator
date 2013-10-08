@@ -7,7 +7,7 @@ import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.mock.MockitoSugar
 import model.{Building, Player}
 import org.mockito.Mockito
-import fr.simply.{StubServer, StaticServerResponse, GET}
+import fr.simply.{StaticServerResponse, GET}
 import fr.simply.util.Text_Plain
 import fr.simply.fixture.StubServerFixture
 
@@ -107,5 +107,4 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
             Mockito.verify(building).close()
         }
     }
-
 }
