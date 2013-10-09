@@ -134,6 +134,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
         Mockito.when(building.addBuildingUser()).thenReturn(building)
+        Mockito.when(building.tick()).thenReturn(building)
 
         withStubServerFixture(8080, route) { server =>
             TestActorRef(new ActorStub(testActor), "players")

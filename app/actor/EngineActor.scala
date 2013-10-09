@@ -53,8 +53,8 @@ class EngineActor(private val player: Player,
             case DOWN => building.down()
             case OPEN => building.open()
             case CLOSE => building.close()
-            case NOTHING => log.info("nothing"); building.success // TODO building.tick
-            case UNKNNOW_COMMAND => log.error("unknown command !"); building.success // TODO building.tick // TODO unknown command ???
+            case NOTHING => log.info("nothing"); building.tick().success
+            case UNKNNOW_COMMAND => log.error("unknown command !"); building.tick().success     // TODO unknown command ???  // TODO test
         }
     }
 }
