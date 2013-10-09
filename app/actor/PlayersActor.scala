@@ -6,8 +6,6 @@ import model.PlayerInfo
 
 class PlayersActor(private var players: Set[PlayerInfo] = Set(), private var playerEngines: Set[ActorRef] = Set()) extends Actor with ActorLogging {
 
-    private val system = context.system
-
     def receive = {
         case Register(player, serverUrl) => {
             players = players + new PlayerInfo(player)
@@ -29,7 +27,7 @@ class PlayersActor(private var players: Set[PlayerInfo] = Set(), private var pla
     }
 
     private def createEngine(player: Player, serverUrl: String): ActorRef =
-        system.actorOf(Props(new EngineActor(player, serverUrl)), name=s"engine-${player.email}")
+        context.system.actorOf(Props(new EngineActor(player, serverUrl)), name=s"engine-${player.email}")
 }
 
 case class Register(player: Player, serverUrl: String)

@@ -20,7 +20,7 @@ class EngineActor(private val player: Player,
 
     def receive = {
         case Tick => {
-            building.addUser()
+            building = building.addBuildingUser()
 
             val playerResponse = WS.url(s"$serverUrl/nextCommand").get()
 
@@ -34,15 +34,15 @@ class EngineActor(private val player: Player,
 
     private def successCase(playerResponse: Future[Response]) {
         playerResponse onSuccess { case response =>
-                val new_building_valid = buildNewBuildingFromNextCommand(response)
+            val new_building_valid = buildNewBuildingFromNextCommand(response)
 
-                new_building_valid.map { new_building =>
-                    building = new_building
-                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, new_building))
-                }
-
-            // TODO Validation.Failure case ???
+            new_building_valid.map { new_building =>
+                building = new_building           // TODO !!! accès concurrent à building ???
+                playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+            }
         }
+
+        // TODO Validation.Failure case ???
     }
 
     private def buildNewBuildingFromNextCommand(response: Response): Validation[IncoherentInstructionForStateBuilding, Building] = {
@@ -54,7 +54,7 @@ class EngineActor(private val player: Player,
             case OPEN => building.open()
             case CLOSE => building.close()
             case NOTHING => log.info("nothing"); building.success // TODO building.tick
-            case UNKNNOW_COMMAND => log.error("unknown command !"); building.success // TODO building.tick
+            case UNKNNOW_COMMAND => log.error("unknown command !"); building.success // TODO building.tick // TODO unknown command ???
         }
     }
 }
