@@ -5,26 +5,17 @@ import Scalaz._
 
 case class Building(score: Int = 0,
                     peopleWaitingTheElevator: Vector[Int] = Vector(0, 0, 0, 0, 0, 0),
-                    floor: Int = 0,
                     peopleInTheElevator: Int = 0,
                     doorIsOpen: Boolean = false,
                     maxFloor: Int = 5,
+                    floor: Int = 0,
+                    maxUser: Int = 10,
                     users: List[BuildingUser] = Nil) {
 
-    def addBuildingUser(): Building = null
-    // créer User si limite pas dépassée
-        // BuildingUser(from, target, tickToWait, tickToGo, currentBuildingFloor, currentBuildingDoorsStatus, status: Waiting/travelling/DONE)
-
-        //dans le user
-            //à sa construction
-                // User.call vers le player    ?at=from&direction=up/down         fire & forget
-                // si porte ouverte et ascenseur à son étage d'origine => status = travelling & userAreEntered + go
-
-            // quand il est notifié
-                // envoi event
-
-        // score quand user sors de l'scenseur envoie son score à building
-            //voir github score tests
+    def addBuildingUser(): Building = {
+        if(maxUserIsReached) this
+        else this.copy(users = BuildingUser.randomCreate() :: this.users)
+    }
 
     // def tick()     notifie tous les users que 1 tick est passé
 
@@ -49,6 +40,8 @@ case class Building(score: Int = 0,
     def close(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(!doorIsOpen) IncoherentInstructionForStateBuilding("doors are already closed").fail
         else this.copy(doorIsOpen = false).success
+
+    private def maxUserIsReached: Boolean = this.users.size >= maxUser
 }
 
 case class IncoherentInstructionForStateBuilding(message: String)

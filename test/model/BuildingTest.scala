@@ -46,9 +46,11 @@ class BuildingTest extends FunSuite with ShouldMatchers {
         Building(doorIsOpen = true).open() should be(Failure(IncoherentInstructionForStateBuilding("doors are already opened")))
     }
 
-    // test addUser
-        //ajoute un user dans le building
-            // si limite atteinte - on ajoute pas
-            // sinon add user avec floor de départ et floor souhaité
+    test("building.addBuildingUser should add user") {
+        Building(users = List(BuildingUser())).addBuildingUser().users should have size 2
+    }
 
+    test("if users number is reached maximum should don't addUser") {
+        Building(maxUser = 0).addBuildingUser().users should be ('empty)
+    }
 }
