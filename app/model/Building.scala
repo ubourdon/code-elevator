@@ -17,7 +17,7 @@ case class Building(score: Int = 0,
         else this.copy(users = BuildingUser.randomCreate() :: this.users)
     }
 
-    // def tick()     notifie tous les users que 1 tick est passé
+    def tick(): Building = this.copy(users = this.users.map( user => user.tick() ))
 
     // TODO notifie user nouvel etat building
     def up(): Validation[IncoherentInstructionForStateBuilding, Building] =

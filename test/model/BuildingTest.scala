@@ -3,8 +3,10 @@ package model
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import scalaz.{Validation, Failure, Success}
+import org.scalatest.mock.MockitoSugar
+import org.mockito.Mockito
 
-class BuildingTest extends FunSuite with ShouldMatchers {
+class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
 
     test("building.up should increment floor by 1") {
         Building().up() should be (Success(Building(floor = 1)))
@@ -52,5 +54,12 @@ class BuildingTest extends FunSuite with ShouldMatchers {
 
     test("if users number is reached maximum should don't addUser") {
         Building(maxUser = 0).addBuildingUser().users should be ('empty)
+    }
+
+    test("when Building.tick(), building.users.tick should be call") {
+        val user = mock[BuildingUser]
+        Building(users = List(user)).tick()
+
+        Mockito.verify(user).tick()
     }
 }
