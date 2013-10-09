@@ -12,6 +12,7 @@ import fr.simply.util.Text_Plain
 import fr.simply.fixture.StubServerFixture
 import testing.tools.{ActorTestingTools, ActorStub}
 import concurrent.duration._
+import scalaz.Scalaz._
 
 class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers
                       with BeforeAndAfterAll with BeforeAndAfter with MockitoSugar
@@ -39,7 +40,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
         withStubServerFixture(8080, route) { server =>
             val player = Player("toto", "titi", "tata")
             val building = mock[Building]
-            Mockito.when(building.up()).thenReturn(Building(floor = 1))
+            Mockito.when(building.up()).thenReturn(Building(floor = 1).success)
 
             TestActorRef(new ActorStub(testActor), "players")
             val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:${server.portInUse}", building))
@@ -60,7 +61,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
         withStubServerFixture(8080, route) { server =>
             val player = Player("toto", "titi", "tata")
             val building = mock[Building]
-            Mockito.when(building.down()).thenReturn(Building(floor = -1))
+            Mockito.when(building.down()).thenReturn(Building(floor = -1).success)
 
             TestActorRef(new ActorStub(testActor), "players")
             val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:${server.portInUse}", building))
@@ -81,7 +82,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
         withStubServerFixture(8080, route) { server =>
             val player = Player("toto", "titi", "tata")
             val building = mock[Building]
-            Mockito.when(building.open()).thenReturn(Building(doorIsOpen = true))
+            Mockito.when(building.open()).thenReturn(Building(doorIsOpen = true).success)
 
             TestActorRef(new ActorStub(testActor), "players")
             val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:${server.portInUse}", building))
@@ -102,7 +103,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
         withStubServerFixture(8080, route) { server =>
             val player = Player("toto", "titi", "tata")
             val building = mock[Building]
-            Mockito.when(building.close()).thenReturn(Building(doorIsOpen = true))
+            Mockito.when(building.close()).thenReturn(Building(doorIsOpen = true).success)
 
             TestActorRef(new ActorStub(testActor), "players")
             val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:${server.portInUse}", building))

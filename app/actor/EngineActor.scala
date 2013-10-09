@@ -1,9 +1,11 @@
 package actor
 
 import akka.actor.{Actor, ActorLogging}
-import model.{PlayerInfo, Building, Player}
-import play.api.libs.ws.WS
+import model.{IncoherentInstructionForStateBuilding, PlayerInfo, Building, Player}
+import play.api.libs.ws.{Response, WS}
 import concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scalaz.Validation
 
 /**
  *    Toutes les secondes essayer de rajouter un utilisateur d'ascenseur dans l'immeuble - limite max
@@ -17,24 +19,43 @@ class EngineActor(private val player: Player,
     private val playersActor = context.system.actorSelection(context.system / "players")
 
     def receive = {
-        case Tick =>
+        case Tick => {
             building.addUser()
+
             val playerResponse = WS.url(s"$serverUrl/nextCommand").get()
 
-            playerResponse onSuccess { case response =>
-                NextCommand(response.body) match {
-                    case UP => building = building.up()
-                    case DOWN => building = building.down()
-                    case OPEN => building = building.open()
-                    case CLOSE => building = building.close()
-                    case NOTHING => log.info("nothing")
-                    case UNKNNOW_COMMAND => log.error("unknown command !")
-                }
-
-                playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
-            }
+            successCase(playerResponse)
+            
+            // TODO Future.failure case ???
+        }
 
         case _ => log.warning("unknow message send !")
+    }
+
+    private def successCase(playerResponse: Future[Response]) {
+        playerResponse onSuccess { case response =>
+                val new_building_valid = buildNewBuildingFromNextCommand(response)
+
+                new_building_valid.map { new_building =>
+                    building = new_building
+                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, new_building))
+                }
+
+            // TODO Validation.Failure case ???
+        }
+    }
+
+    private def buildNewBuildingFromNextCommand(response: Response): Validation[IncoherentInstructionForStateBuilding, Building] = {
+        import scalaz.Scalaz._
+
+        NextCommand(response.body) match {
+            case UP => building.up()
+            case DOWN => building.down()
+            case OPEN => building.open()
+            case CLOSE => building.close()
+            case NOTHING => log.info("nothing"); building.success // TODO building.tick
+            case UNKNNOW_COMMAND => log.error("unknown command !"); building.success // TODO building.tick
+        }
     }
 }
 

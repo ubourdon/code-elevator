@@ -1,31 +1,53 @@
 package model
 
-case class Building(score: Int = 0, peopleWaitingTheElevator: Vector[Int] = Vector(0, 0, 0, 0, 0, 0), floor: Int = 0, peopleInTheElevator: Int = 0, doorIsOpen: Boolean = false, maxFloor: Int = 5) {
-    /*private val maxFloor = 5
+import scalaz._
+import Scalaz._
 
-    private var floor: Int = 0
-    private var doorIsOpened = false
-    score: Int
-    */
+case class Building(score: Int = 0,
+                    peopleWaitingTheElevator: Vector[Int] = Vector(0, 0, 0, 0, 0, 0),
+                    floor: Int = 0,
+                    peopleInTheElevator: Int = 0,
+                    doorIsOpen: Boolean = false,
+                    maxFloor: Int = 5) {
 
-    def addUser(): Unit = ()
+    def addUser(): Building = null
+        // créer User si limite pas dépasser
+            // User(from, target, tickToWait, tickToGo, currentBuildingFloor, currentBuildingDoorsStatus, status: Waiting/travelling/DONE)
 
-    // TODO use validation ???
-    def up(): Building =
-        if(doorIsOpen) throw new IllegalStateException("the door is opened")
-        else if(floor < maxFloor) this.copy(floor = this.floor + 1)
-        else throw new IllegalStateException("the floor is reached maximum")
+            //dans le user
+                //à sa construction
+                    // User.call vers le player    ?at=from&direction=up/down         fire & forget
+                    // si porte ouverte et ascenseur à son étage d'origine => status = travelling & userAreEntered + go
 
-    def down(): Building =
-        if(doorIsOpen) throw new IllegalStateException("the door is opened")
-        else if(floor > 0) this.copy(floor = this.floor - 1)
-        else throw new IllegalStateException("the floor is reached 0")
+                // quand il est notifié
+                    // envoi event
 
-    def open(): Building =
-        if(doorIsOpen) throw new IllegalStateException("doors are already opened")
-        else this.copy(doorIsOpen = true)
+            // score quand user sors de l'scenseur envoie son score à building
+                //voir github score tests
 
-    def close(): Building =
-        if(!doorIsOpen) throw new IllegalStateException("doors are already closed")
-        else this.copy(doorIsOpen = false)
+    // def tick()     notifie tous les users que 1 tick est passé
+
+    // TODO notifie user nouvel etat building
+    def up(): Validation[IncoherentInstructionForStateBuilding, Building] =
+        if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail
+        else if(floor < maxFloor) this.copy(floor = this.floor + 1).success
+        else IncoherentInstructionForStateBuilding("the floor is reached maximum").fail
+
+    // TODO notifie user nouvel etat building
+    def down(): Validation[IncoherentInstructionForStateBuilding, Building] =
+        if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail
+        else if(floor > 0) this.copy(floor = this.floor - 1).success
+        else IncoherentInstructionForStateBuilding("the floor is reached 0").fail
+
+    // TODO notifie user nouvel etat building
+    def open(): Validation[IncoherentInstructionForStateBuilding, Building] =
+        if(doorIsOpen) IncoherentInstructionForStateBuilding("doors are already opened").fail
+        else this.copy(doorIsOpen = true).success
+
+    // TODO notifie user nouvel etat building
+    def close(): Validation[IncoherentInstructionForStateBuilding, Building] =
+        if(!doorIsOpen) IncoherentInstructionForStateBuilding("doors are already closed").fail
+        else this.copy(doorIsOpen = false).success
 }
+
+case class IncoherentInstructionForStateBuilding(message: String)
