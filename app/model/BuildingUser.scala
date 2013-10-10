@@ -20,6 +20,6 @@ object BuildingUser {
 
 // score quand user sors de l'scenseur envoie son score à building
     //voir github score tests
-case class BuildingUser() {
+case class BuildingUser(tickToWait: Int = 0) {
     def tick(): BuildingUser = null
 }

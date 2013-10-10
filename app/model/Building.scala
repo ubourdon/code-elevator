@@ -9,7 +9,7 @@ case class Building(score: Int = 0,
                     doorIsOpen: Boolean = false,
                     maxFloor: Int = 5,
                     floor: Int = 0,
-                    maxUser: Int = 10,
+                    maxUser: Int = 3,
                     users: List[BuildingUser] = Nil) {
 
     def addBuildingUser(): Building = {
@@ -17,31 +17,29 @@ case class Building(score: Int = 0,
         else this.copy(users = BuildingUser.randomCreate() :: this.users)
     }
 
-    def tick(): Building = this.copy(users = this.users.map( user => user.tick() ))
+    def tick(): Building = notifyTickToUsers(this)
 
-    // TODO notifie user nouvel etat building
     def up(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail
-        else if(floor < maxFloor) this.copy(floor = this.floor + 1).success
+        else if(floor < maxFloor) notifyTickToUsers(this).copy(floor = this.floor + 1).success
         else IncoherentInstructionForStateBuilding("the floor is reached maximum").fail
 
-    // TODO notifie user nouvel etat building
     def down(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail
-        else if(floor > 0) this.copy(floor = this.floor - 1).success
+        else if(floor > 0) notifyTickToUsers(this).copy(floor = this.floor - 1).success
         else IncoherentInstructionForStateBuilding("the floor is reached 0").fail
 
-    // TODO notifie user nouvel etat building
     def open(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("doors are already opened").fail
-        else this.copy(doorIsOpen = true).success
+        else notifyTickToUsers(this).copy(doorIsOpen = true).success
 
-    // TODO notifie user nouvel etat building
     def close(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(!doorIsOpen) IncoherentInstructionForStateBuilding("doors are already closed").fail
-        else this.copy(doorIsOpen = false).success
+        else notifyTickToUsers(this).copy(doorIsOpen = false).success
 
     private def maxUserIsReached: Boolean = this.users.size >= maxUser
+
+    private def notifyTickToUsers(building: Building): Building = building.copy(users = building.users.map( _.tick() ))
 }
 
 case class IncoherentInstructionForStateBuilding(message: String)
