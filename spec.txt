@@ -1,0 +1,15 @@
+
+API doc
+Awaiting response
+
+GET /nextCommand
+    body of the request must contains NOTHING, UP, DOWN, OPEN or CLOSE
+
+Events
+just respond HTTP 200 return code
+
+GET /call?atFloor=[0-5]&to=[UP|DOWN]
+GET /go?floorToGo=[0-5]
+GET /userHasEntered
+GET /userHasExited
+GET /reset?cause=information+message
