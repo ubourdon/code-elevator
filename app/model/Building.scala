@@ -14,20 +14,20 @@ case class Building(score: Int = 0,
 
     def addBuildingUser(): Building = {
         if(maxUserIsReached) this
-        else this.copy(users = BuildingUser.randomCreate() :: this.users)
+        else this.copy(users = BuildingUser.randomCreate(building = this) :: this.users)
     }
 
     def tick(): Building = notifyTickToUsers(this)
 
     def up(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail
-        else if(floor < maxFloor) notifyTickToUsers(this).copy(floor = this.floor + 1).success
-        else IncoherentInstructionForStateBuilding("the floor is reached maximum").fail
+        else if(floor >= maxFloor) IncoherentInstructionForStateBuilding("the floor is reached maximum").fail
+        else notifyTickToUsers(this).copy(floor = this.floor + 1).success
 
     def down(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail
-        else if(floor > 0) notifyTickToUsers(this).copy(floor = this.floor - 1).success
-        else IncoherentInstructionForStateBuilding("the floor is reached 0").fail
+        else if(floor == 0) IncoherentInstructionForStateBuilding("the floor is reached 0").fail
+        else notifyTickToUsers(this).copy(floor = this.floor - 1).success
 
     def open(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("doors are already opened").fail

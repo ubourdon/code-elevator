@@ -25,7 +25,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
     }
 
     test("when Building.up should tick all building.users") {
-        val expectedBuildingUser = BuildingUser(tickToWait = 1)
+        val expectedBuildingUser = BuildingUser(tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
         Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
@@ -50,7 +50,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
     }
 
     test("when Building.down should tick all building.users") {
-        val expectedBuildingUser = BuildingUser(tickToWait = 1)
+        val expectedBuildingUser = BuildingUser(tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
         Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
@@ -71,7 +71,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
     }
 
     test("when Building.close should tick all building.users") {
-        val expectedBuildingUser = BuildingUser(tickToWait = 1)
+        val expectedBuildingUser = BuildingUser(tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
         Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
@@ -92,7 +92,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
     }
 
     test("when Building.open should tick all building.users") {
-        val expectedBuildingUser = BuildingUser(tickToWait = 1)
+        val expectedBuildingUser = BuildingUser(tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
         Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
@@ -105,7 +105,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
      ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
     test("building.addBuildingUser should add user") {
-        Building(users = List(BuildingUser())).addBuildingUser().users should have size 2
+        Building(users = List(BuildingUser(from = 0, target = 1))).addBuildingUser().users should have size 2
     }
 
     test("if users number is reached maximum should don't addUser") {

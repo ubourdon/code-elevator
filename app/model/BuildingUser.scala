@@ -1,9 +1,20 @@
 package model
 
+import scala.util.Random
+
 object BuildingUser {
-    // TODO implemente ramdom method
-    def randomCreate(): BuildingUser = {
-        BuildingUser()
+    def randomCreate(random: Random = new Random(), building: Building): BuildingUser = {
+        val random_from = if(random.nextBoolean()) 0 else random.nextInt(building.maxFloor) + 1
+        val random_to = {
+            def to_different_of_from(): Int = {
+                val to = random.nextInt(building.maxFloor + 1)
+                if (to == random_from) to_different_of_from()
+                else to
+            }
+            to_different_of_from()
+        }
+
+        BuildingUser(from = random_from, target = random_to)
     }
 }
 
@@ -20,6 +31,11 @@ object BuildingUser {
 
 // score quand user sors de l'scenseur envoie son score à building
     //voir github score tests
-case class BuildingUser(tickToWait: Int = 0) {
+case class BuildingUser(from: Int, target: Int, tickToWait: Int = 0/*, currentBuildingFloor: Int*//*, currentBuildingDoorsStatus: Boolen, tickToGo: Int = 0, status: BuildingUserStatus = WAITING*/) {
     def tick(): BuildingUser = null
 }
+
+sealed trait BuildingUserStatus
+case object WAITING extends BuildingUserStatus
+case object TRAVELLING extends BuildingUserStatus
+case object DONE extends BuildingUserStatus
