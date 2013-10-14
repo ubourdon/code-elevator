@@ -1,12 +1,12 @@
 package actor
 
-import akka.testkit.{TestActorRef, ImplicitSender, TestKit}
-import akka.actor.ActorSystem
+import akka.testkit.{TestProbe, TestActorRef, ImplicitSender, TestKit}
+import akka.actor.{Props, ActorRef, ActorSystem}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.mock.MockitoSugar
 import model.{BuildingUser, PlayerInfo, Building, Player}
-import org.mockito.Mockito
+import org.mockito.{Matchers, Mockito}
 import fr.simply.{StaticServerResponse, GET}
 import fr.simply.util.Text_Plain
 import fr.simply.fixture.StubServerFixture
@@ -18,6 +18,8 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
                       with BeforeAndAfterAll with BeforeAndAfter with MockitoSugar
                       with ImplicitSender with StubServerFixture with ActorTestingTools {
 
+    override def afterAll() { system.shutdown() }
+
     after { closeDummyActors("players") }
 
     test("when engineActor receive Tick message, try to add user in buidling") {
@@ -28,7 +30,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.addBuildingUser()).thenReturn(Building(users = List(BuildingUser(from = 0, target = 1))))
+        Mockito.when(building.addBuildingUser(Matchers.any[ActorRef])).thenReturn(Building(users = List(BuildingUser(parentActor = TestActorRef(new EngineActor(null, "")), from = 0, target = 1))))
         Mockito.when(building.up()).thenReturn(Building(floor = 1).success)
 
         withStubServerFixture(8080, route) { server =>
@@ -37,7 +39,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
             engineActor ! Tick
 
-            expectMsg(1 second, UpdatePlayerInfo( new PlayerInfo(player, Building(users = List(BuildingUser(from = 0, target = 1)))) ))
+            expectMsg(1 second, UpdatePlayerInfo( new PlayerInfo(player, Building(users = List(BuildingUser(parentActor = null, from = 0, target = 1)))) ))
         }
     }
 
@@ -49,7 +51,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.addBuildingUser()).thenReturn(building)
+        Mockito.when(building.addBuildingUser(Matchers.any[ActorRef])).thenReturn(building)
         Mockito.when(building.up()).thenReturn(Building(floor = 1).success)
 
         withStubServerFixture(8080, route) { server =>
@@ -70,7 +72,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.addBuildingUser()).thenReturn(building)
+        Mockito.when(building.addBuildingUser(Matchers.any[ActorRef])).thenReturn(building)
         Mockito.when(building.down()).thenReturn(Building(floor = -1).success)
 
         withStubServerFixture(8080, route) { server =>
@@ -91,7 +93,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.addBuildingUser()).thenReturn(building)
+        Mockito.when(building.addBuildingUser(Matchers.any[ActorRef])).thenReturn(building)
         Mockito.when(building.open()).thenReturn(Building(doorIsOpen = true).success)
 
         withStubServerFixture(8080, route) { server =>
@@ -112,7 +114,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.addBuildingUser()).thenReturn(building)
+        Mockito.when(building.addBuildingUser(Matchers.any[ActorRef])).thenReturn(building)
         Mockito.when(building.close()).thenReturn(Building(doorIsOpen = true).success)
 
         withStubServerFixture(8080, route) { server =>
@@ -133,7 +135,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.addBuildingUser()).thenReturn(building)
+        Mockito.when(building.addBuildingUser(Matchers.any[ActorRef])).thenReturn(building)
         Mockito.when(building.tick()).thenReturn(building)
 
         withStubServerFixture(8080, route) { server =>

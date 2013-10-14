@@ -1,12 +1,17 @@
 package model
 
-import org.scalatest.FunSuite
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
 import scalaz.{Failure, Success}
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito
+import akka.testkit.{TestKit, TestActorRef}
+import actor.EngineActor
+import akka.actor.ActorSystem
 
-class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
+class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers with MockitoSugar with BeforeAndAfterAll {
+
+    override def afterAll() { system.shutdown() }
 
     /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
       *                          Building.up()                         *
@@ -25,7 +30,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
     }
 
     test("when Building.up should tick all building.users") {
-        val expectedBuildingUser = BuildingUser(tickToWait = 1, from = 0, target = 1)
+        val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
         Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
@@ -50,7 +55,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
     }
 
     test("when Building.down should tick all building.users") {
-        val expectedBuildingUser = BuildingUser(tickToWait = 1, from = 0, target = 1)
+        val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
         Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
@@ -71,7 +76,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
     }
 
     test("when Building.close should tick all building.users") {
-        val expectedBuildingUser = BuildingUser(tickToWait = 1, from = 0, target = 1)
+        val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
         Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
@@ -92,7 +97,7 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
     }
 
     test("when Building.open should tick all building.users") {
-        val expectedBuildingUser = BuildingUser(tickToWait = 1, from = 0, target = 1)
+        val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
         Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
@@ -105,11 +110,11 @@ class BuildingTest extends FunSuite with ShouldMatchers with MockitoSugar {
      ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
     test("building.addBuildingUser should add user") {
-        Building(users = List(BuildingUser(from = 0, target = 1))).addBuildingUser().users should have size 2
+        Building(users = List(BuildingUser(parentActor = null, from = 0, target = 1))).addBuildingUser(TestActorRef(new EngineActor(null, ""))).users should have size 2
     }
 
     test("if users number is reached maximum should don't addUser") {
-        Building(maxUser = 0).addBuildingUser().users should be ('empty)
+        Building(maxUser = 0).addBuildingUser(null).users should be ('empty)
     }
 
     test("when Building.tick(), building.users.tick should be call") {

@@ -2,6 +2,7 @@ package model
 
 import scalaz._
 import Scalaz._
+import akka.actor.ActorRef
 
 case class Building(score: Int = 0,
                     peopleWaitingTheElevator: Vector[Int] = Vector(0, 0, 0, 0, 0, 0),
@@ -12,9 +13,9 @@ case class Building(score: Int = 0,
                     maxUser: Int = 3,
                     users: List[BuildingUser] = Nil) {
 
-    def addBuildingUser(): Building = {
+    def addBuildingUser(parentActor: ActorRef): Building = {
         if(maxUserIsReached) this
-        else this.copy(users = BuildingUser.randomCreate(building = this) :: this.users)
+        else this.copy(users = BuildingUser.randomCreate(building = this, parentActor = parentActor) :: this.users)
     }
 
     def tick(): Building = notifyTickToUsers(this)

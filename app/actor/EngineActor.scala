@@ -1,11 +1,16 @@
 package actor
 
 import akka.actor.{Actor, ActorLogging}
-import model.{IncoherentInstructionForStateBuilding, PlayerInfo, Building, Player}
-import play.api.libs.ws.{Response, WS}
+import model._
+import play.api.libs.ws.WS
 import concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.Validation
+import model.Player
+import play.api.libs.ws.Response
+import model.PlayerInfo
+import model.IncoherentInstructionForStateBuilding
+import model.Building
 
 /**
  *    Toutes les secondes essayer de rajouter un utilisateur d'ascenseur dans l'immeuble - limite max
@@ -20,7 +25,7 @@ class EngineActor(private val player: Player,
 
     def receive = {
         case Tick => {
-            building = building.addBuildingUser()
+            building = building.addBuildingUser(self)
 
             val playerResponse = WS.url(s"$serverUrl/nextCommand").get()
 
@@ -58,6 +63,8 @@ class EngineActor(private val player: Player,
         }
     }
 }
+
+case class CallPlayer(user: BuildingUser)
 
 sealed trait NextCommand
 object NextCommand {
