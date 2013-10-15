@@ -20,6 +20,8 @@ case class Building(score: Int = 0,
 
     def tick(): Building = notifyTickToUsers(this)
 
+    def reset(): Building = null // TODO implement method
+
     def up(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail
         else if(floor >= maxFloor) IncoherentInstructionForStateBuilding("the floor is reached maximum").fail

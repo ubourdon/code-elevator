@@ -4,13 +4,15 @@ import akka.actor.{Actor, ActorLogging}
 import model._
 import play.api.libs.ws.WS
 import concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scalaz.Validation
 import model.Player
 import play.api.libs.ws.Response
 import model.PlayerInfo
 import model.IncoherentInstructionForStateBuilding
 import model.Building
+import scala.util.Try
+import concurrent.duration._
 
 /**
  *    Toutes les secondes essayer de rajouter un utilisateur d'ascenseur dans l'immeuble - limite max
@@ -32,6 +34,18 @@ class EngineActor(private val player: Player,
             successCase(playerResponse)
             
             // TODO Future.failure case ???
+        }
+
+        case CallPlayer(user) => {
+            val direction = if((user.from - user.target) < 0 ) "UP" else "DOWN"
+            val url = s"$serverUrl/call?atFloor=${user.from}&to=$direction"
+
+            val new_building = Try(Await.result(WS.url(url).get(), 1 second))
+                                    .map { resp => if(resp.status != 200) throw new IllegalStateException() else building }
+                                    .getOrElse(building.reset())
+            building = new_building
+
+            playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
         }
 
         case _ => log.warning("unknow message send !")

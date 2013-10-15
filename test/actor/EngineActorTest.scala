@@ -147,4 +147,19 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
             expectMsg(1 second, UpdatePlayerInfo(new PlayerInfo(player, building)))
         }
     }
+
+    test("when engineActor ! CallPlayer & player server don't respond, should call building.reset()") {
+        val player = Player("toto", "titi", "tata")
+        val building = mock[Building]
+        Mockito.when(building.reset()).thenReturn(building)
+        val user = mock[BuildingUser]
+
+        TestActorRef(new ActorStub(testActor), "players")
+
+        val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:8080", building))
+
+        engineActor ! CallPlayer(user)
+
+        expectMsg(1 second, UpdatePlayerInfo(new PlayerInfo(player, building)))
+    }
 }

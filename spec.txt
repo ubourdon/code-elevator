@@ -8,7 +8,7 @@ GET /nextCommand
 Events
 just respond HTTP 200 return code
 
-GET /call?atFloor=[0-5]&to=[UP|DOWN]
+GET /call?atFloor=[0-5]&to=[UP|DOWN]                 a la création de user
 GET /go?floorToGo=[0-5]
 GET /userHasEntered
 GET /userHasExited

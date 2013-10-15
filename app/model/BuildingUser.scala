@@ -1,8 +1,6 @@
 package model
 
-import scala.util.{Try, Random}
-import play.api.libs.ws.WS
-import scala.concurrent.Await
+import scala.util.Random
 import akka.actor.ActorRef
 import actor.CallPlayer
 
@@ -29,19 +27,7 @@ object BuildingUser {
 /*, currentBuildingFloor: Int*//*, currentBuildingDoorsStatus: Boolean, tickToGo: Int = 0, status: BuildingUserStatus = WAITING*/
 case class BuildingUser(private val parentActor: ActorRef, from: Int, target: Int, tickToWait: Int = 0) {
 
-    def tick(): BuildingUser = null
-
-    private def callPlayer() {                      // TODO transférer ca dans engineActor - il s'occupe de tous les appels http
-        import concurrent.duration._
-
-        // call?atFloor=[0-5]&to=[UP|DOWN]
-        val url = s"http://localhost:8080/call?atFloor=0&to=UP"
-
-        val tryResponse = Try(Await.result(WS.url(url).get(), 1 second))
-        tryResponse.map { response =>
-            if(response.status != 200) throw new PlayerServerConnectError(s"remote server respond ${response.status} from [GET] $url")
-        }.get
-    }
+    def tick(): BuildingUser = null   // TODO implement method
 }
 
 sealed trait BuildingUserStatus
