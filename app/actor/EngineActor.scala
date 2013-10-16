@@ -38,6 +38,7 @@ class EngineActor(private val player: Player,
 
         case CallPlayer(user) => {
             val direction = if((user.from - user.target) < 0 ) "UP" else "DOWN"
+
             val url = s"$serverUrl/call?atFloor=${user.from}&to=$direction"
 
             val new_building = Try(Await.result(WS.url(url).get(), 1 second))
@@ -47,6 +48,9 @@ class EngineActor(private val player: Player,
 
             playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
         }
+
+        // case SendEventToPlayer ???                       // send GET /userHasEntered + GET /go?floorToGo=[0-5]  l'ordre est important
+
 
         case _ => log.warning("unknow message send !")
     }
@@ -61,7 +65,7 @@ class EngineActor(private val player: Player,
             }
         }
 
-        // TODO Validation.Failure case ???
+        // TODO Validation.Failure case ???  building.reset() + GET /reset?cause=information+message
     }
 
     private def buildNewBuildingFromNextCommand(response: Response): Validation[IncoherentInstructionForStateBuilding, Building] = {
@@ -79,6 +83,11 @@ class EngineActor(private val player: Player,
 }
 
 case class CallPlayer(user: BuildingUser)
+case class SendEventToPlayer(event: CodeElevatorEvent)
+
+trait CodeElevatorEvent
+case class Go(user: BuildingUser) extends CodeElevatorEvent
+case object UserHasEntered extends CodeElevatorEvent
 
 sealed trait NextCommand
 object NextCommand {

@@ -20,7 +20,7 @@ case class Building(score: Int = 0,
 
     def tick(): Building = notifyTickToUsers(this)
 
-    def reset(): Building = null // TODO implement method
+    def reset(): Building = null // TODO implement method   reset Building but old score - 10  + GET /reset?cause=information+message
 
     def up(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail

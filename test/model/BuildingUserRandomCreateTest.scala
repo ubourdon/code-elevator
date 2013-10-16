@@ -4,12 +4,15 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.mock.MockitoSugar
 import scala.util.Random
-import org.mockito.Mockito
+import org.mockito.Mockito._
 import akka.testkit.{TestActorRef, TestKit}
-import actor.{CallPlayer, EngineActor}
+import actor._
 import akka.actor.ActorSystem
 import testing.tools.{ActorTestingTools, ActorStub}
 import concurrent.duration._
+import actor.Go
+import actor.CallPlayer
+import actor.SendEventToPlayer
 
 class BuildingUserRandomCreateTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers
                                    with MockitoSugar with BeforeAndAfterAll with BeforeAndAfter with ActorTestingTools {
@@ -20,10 +23,10 @@ class BuildingUserRandomCreateTest extends TestKit(ActorSystem("test")) with Fun
 
     test("should create a user at floor not zero") {
         val building: Building = mock[Building]
-        Mockito.when(building.maxFloor).thenReturn(4)
+        when(building.maxFloor).thenReturn(4)
         val random: Random = mock[Random]
-        Mockito.when(random.nextBoolean()).thenReturn(false)
-        Mockito.when(random.nextInt(4)).thenReturn(2)
+        when(random.nextBoolean()).thenReturn(false)
+        when(random.nextInt(4)).thenReturn(2)
 
         val user = BuildingUser.randomCreate(building, TestActorRef(new EngineActor(null, "")), random)
 
@@ -34,10 +37,10 @@ class BuildingUserRandomCreateTest extends TestKit(ActorSystem("test")) with Fun
         val maxFloor = 1
 
         val building: Building = mock[Building]
-        Mockito.when(building.maxFloor).thenReturn(maxFloor)
+        when(building.maxFloor).thenReturn(maxFloor)
         val random: Random = mock[Random]
-        Mockito.when(random.nextBoolean()).thenReturn(true)
-        Mockito.when(random.nextInt(maxFloor + 1)).thenReturn(1)
+        when(random.nextBoolean()).thenReturn(true)
+        when(random.nextInt(maxFloor + 1)).thenReturn(1)
 
         val user = BuildingUser.randomCreate(building, TestActorRef(new EngineActor(null, "")), random)
 
@@ -46,9 +49,9 @@ class BuildingUserRandomCreateTest extends TestKit(ActorSystem("test")) with Fun
 
     test("should create a user wanting to go at 5th floor") {
         val building: Building = mock[Building]
-        Mockito.when(building.maxFloor).thenReturn(4)
+        when(building.maxFloor).thenReturn(4)
         val random: Random = mock[Random]
-        Mockito.when(random.nextInt(5)).thenReturn(4)
+        when(random.nextInt(5)).thenReturn(4)
 
         val user = BuildingUser.randomCreate(building, TestActorRef(new EngineActor(null, "")), random)
 
@@ -59,10 +62,10 @@ class BuildingUserRandomCreateTest extends TestKit(ActorSystem("test")) with Fun
         val maxFloor = 4
 
         val building = mock[Building]
-        Mockito.when(building.maxFloor).thenReturn(maxFloor)
+        when(building.maxFloor).thenReturn(maxFloor)
         val random: Random = mock[Random]
-        Mockito.when(random.nextBoolean()).thenReturn(true)
-        Mockito.when(random.nextInt(maxFloor + 1)).thenReturn(0).thenReturn(1)
+        when(random.nextBoolean()).thenReturn(true)
+        when(random.nextInt(maxFloor + 1)).thenReturn(0).thenReturn(1)
 
         val engine = TestActorRef(new EngineActor(null, ""))
         val user = BuildingUser.randomCreate(building, engine, random)
@@ -72,11 +75,62 @@ class BuildingUserRandomCreateTest extends TestKit(ActorSystem("test")) with Fun
 
     test("when create user with randomCreate should call his engineActor ! CallPlayer(BuildingUser)") {
         val building = mock[Building]
-        Mockito.when(building.maxFloor).thenReturn(1)
+        when(building.maxFloor).thenReturn(1)
         val engine = TestActorRef(new ActorStub(testActor), "engine-test")
 
         val user = BuildingUser.randomCreate(building, engine)
 
         expectMsg(1 second, CallPlayer(user))
+    }
+
+    test("if building door is open & building is at user floor, when create user with randomCreate, user should be in TRAVELLING STATE") {
+        val building = mock[Building]
+        when(building.maxFloor).thenReturn(1)
+        when(building.doorIsOpen).thenReturn(true)
+        when(building.floor).thenReturn(0)           // floor = 0
+        
+        val random = mock[Random]
+        when(random.nextBoolean()).thenReturn(true)  // from = 0
+        when(random.nextInt(2)).thenReturn(1)
+
+        val engine = TestActorRef(new ActorStub(testActor), "engine-test")
+
+        val user = BuildingUser.randomCreate(building, engine, random)
+
+        user.status should be (TRAVELLING)
+    }
+
+    test("if building door is open & building is at user floor, when create user with randomCreate, should send engine ! SendEventToPlayer(UserHasEntered)") {
+        val building = mock[Building]
+        when(building.maxFloor).thenReturn(1)
+        when(building.doorIsOpen).thenReturn(true)
+        when(building.floor).thenReturn(0)           // floor = 0
+
+        val random = mock[Random]
+        when(random.nextBoolean()).thenReturn(true)  // from = 0
+        when(random.nextInt(2)).thenReturn(1)
+
+        val engine = TestActorRef(new ActorStub(testActor), "engine-test")
+
+        BuildingUser.randomCreate(building, engine, random)
+
+        receiveN(3).collectFirst { case e: SendEventToPlayer if(e.event.isInstanceOf[UserHasEntered.type] ) => e } should be ('defined)
+    }
+
+    test("if building door is open & building is at user floor, when create user with randomCreate, should send engine ! SendEventToPlayer(Go)") {
+        val building = mock[Building]
+        when(building.maxFloor).thenReturn(1)
+        when(building.doorIsOpen).thenReturn(true)
+        when(building.floor).thenReturn(0)           // floor = 0
+
+        val random = mock[Random]
+        when(random.nextBoolean()).thenReturn(true)  // from = 0
+        when(random.nextInt(2)).thenReturn(1)
+
+        val engine = TestActorRef(new ActorStub(testActor), "engine-test")
+
+        val user = BuildingUser.randomCreate(building, engine, random)
+
+        receiveN(3).collectFirst { case e: SendEventToPlayer if(e.event == (Go(user))) => e } should be ('defined)
     }
 }
