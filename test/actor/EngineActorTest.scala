@@ -148,7 +148,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
         }
     }
 
-    test("when engineActor ! CallPlayer & player server don't respond, should call building.reset()") {
+    test("when engineActor ! CallPlayer & player server don't respond, should playerActor ! UpdatePlayerInfo with reset") {
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
         Mockito.when(building.reset()).thenReturn(building)
@@ -159,6 +159,35 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
         val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:8080", building))
 
         engineActor ! CallPlayer(user)
+
+        expectMsg(1 second, UpdatePlayerInfo(new PlayerInfo(player, building)))
+    }
+
+    test("when engineActor ! SendEventToPlayer(UserHasEntered) & player server don't respond, should call ! UpdatePlayerInfo with reset") {
+        val player = Player("toto", "titi", "tata")
+        val building = mock[Building]
+        Mockito.when(building.reset()).thenReturn(building)
+
+        TestActorRef(new ActorStub(testActor), "players")
+
+        val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:8080", building))
+
+        engineActor ! SendEventToPlayer(UserHasEntered)
+
+        expectMsg(1 second, UpdatePlayerInfo(new PlayerInfo(player, building)))
+    }
+
+    test("when engineActor ! SendEventToPlayer(Go(user)) & player server don't respond, should call ! UpdatePlayerInfo with reset") {
+        val player = Player("toto", "titi", "tata")
+        val building = mock[Building]
+        Mockito.when(building.reset()).thenReturn(building)
+        val user = mock[BuildingUser]
+
+        TestActorRef(new ActorStub(testActor), "players")
+
+        val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:8080", building))
+
+        engineActor ! SendEventToPlayer(Go(user))
 
         expectMsg(1 second, UpdatePlayerInfo(new PlayerInfo(player, building)))
     }

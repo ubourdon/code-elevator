@@ -39,18 +39,21 @@ class EngineActor(private val player: Player,
         case CallPlayer(user) => {
             val direction = if((user.from - user.target) < 0 ) "UP" else "DOWN"
 
-            val url = s"$serverUrl/call?atFloor=${user.from}&to=$direction"
-
-            val new_building = Try(Await.result(WS.url(url).get(), 1 second))
-                                    .map { resp => if(resp.status != 200) throw new IllegalStateException() else building }
-                                    .getOrElse(building.reset())
-            building = new_building
-
+            building = sendEventToPlayer(s"/call?atFloor=${user.from}&to=$direction")    // TODO test l'envoi de requete http
             playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
         }
 
-        // case SendEventToPlayer ???                       // send GET /userHasEntered + GET /go?floorToGo=[0-5]  l'ordre est important
+        case SendEventToPlayer(event) => {
+            event match {
+                case UserHasEntered =>
+                    building = sendEventToPlayer("/userHasEntered")
+                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))  // TODO test l'envoi de requete http
 
+                case Go(user) =>
+                    building = sendEventToPlayer(s"/go?floorToGo=${user.target}")  // TODO test l'envoi de requete http
+                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+            }
+        }
 
         case _ => log.warning("unknow message send !")
     }
@@ -67,6 +70,12 @@ class EngineActor(private val player: Player,
 
         // TODO Validation.Failure case ???  building.reset() + GET /reset?cause=information+message
     }
+
+    private def sendEventToPlayer(path: String): Building =
+        Try(Await.result(WS.url(serverUrl + path).get(), 1 second))
+            .map { resp => if (resp.status != 200) throw new IllegalStateException() else building}
+            .getOrElse(building.reset())
+
 
     private def buildNewBuildingFromNextCommand(response: Response): Validation[IncoherentInstructionForStateBuilding, Building] = {
         import scalaz.Scalaz._
@@ -85,7 +94,7 @@ class EngineActor(private val player: Player,
 case class CallPlayer(user: BuildingUser)
 case class SendEventToPlayer(event: CodeElevatorEvent)
 
-trait CodeElevatorEvent
+sealed trait CodeElevatorEvent
 case class Go(user: BuildingUser) extends CodeElevatorEvent
 case object UserHasEntered extends CodeElevatorEvent
 
