@@ -15,8 +15,6 @@ import concurrent.duration._
 import scalaz.Scalaz._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import play.api.libs.ws.WS
-import play.api.libs.ws.WS.WSRequestHolder
 
 class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers
                       with BeforeAndAfterAll with BeforeAndAfter with MockitoSugar
@@ -27,24 +25,15 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
     after { closeDummyActors("players") }
 
     test("when engineActor receive Tick message, try to add user in buidling") {
-        val route = GET (
-            path = "/nextCommand",
-            response = StaticServerResponse(Text_Plain, "NOTHING", 200)
-        )
 
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.addBuildingUser(Matchers.any[ActorRef])).thenReturn(Building(users = List(BuildingUser(parentActor = TestActorRef(new EngineActor(null, "")), from = 0, target = 1))))
-        Mockito.when(building.up()).thenReturn(Building(floor = 1).success)
 
-        withStubServerFixture(8080, route) { server =>
-            TestActorRef(new ActorStub(testActor), "players")
-            val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:${server.portInUse}", building))
+        val engineActor = TestActorRef(new EngineActor(player, "", building))
 
-            engineActor ! Tick
+        engineActor ! Tick
 
-            expectMsg(1 second, UpdatePlayerInfo( new PlayerInfo(player, Building(users = List(BuildingUser(parentActor = null, from = 0, target = 1)))) ))
-        }
+        verify(building).addBuildingUser(engineActor)
     }
 
     test("when engineActor receive Tick message & /nextCommand returning UP, should notify PlayersActor with new building state") {

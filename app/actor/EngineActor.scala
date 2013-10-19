@@ -100,6 +100,7 @@ case class SendEventToPlayer(event: CodeElevatorEvent)
 sealed trait CodeElevatorEvent
 case class Go(user: BuildingUser) extends CodeElevatorEvent
 case object UserHasEntered extends CodeElevatorEvent
+case object UserHasExited extends CodeElevatorEvent
 case class Reset(cause: ResetCause) extends CodeElevatorEvent
 
 case class ResetCause(message: String)

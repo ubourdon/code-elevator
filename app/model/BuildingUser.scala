@@ -2,7 +2,10 @@ package model
 
 import scala.util.Random
 import akka.actor.ActorRef
-import actor.{UserHasEntered, Go, SendEventToPlayer, CallPlayer}
+import actor._
+import actor.Go
+import actor.CallPlayer
+import actor.SendEventToPlayer
 
 object BuildingUser {
     def randomCreate(building: Building, parentActor: ActorRef, random: Random = new Random()): BuildingUser = {
@@ -31,26 +34,38 @@ object BuildingUser {
     private def sendEventToPlayer(userCanEnterIntoElevator: Boolean, parentActor: ActorRef, user: BuildingUser) {
         parentActor ! CallPlayer(user)
 
-        if(userCanEnterIntoElevator)
-            parentActor ! SendEventToPlayer(UserHasEntered)
+        if(userCanEnterIntoElevator) {
             parentActor ! SendEventToPlayer(Go(user))
+            parentActor ! SendEventToPlayer(UserHasEntered)
+        }
     }
-
 }
 
-/*, currentBuildingFloor: Int*//*, currentBuildingDoorsStatus: Boolean, tickToGo: Int = 0*/
-case class BuildingUser(private val parentActor: ActorRef, from: Int, target: Int, tickToWait: Int = 0, status: BuildingUserStatus = WAITING) {
+/*, currentBuildingFloor: Int*//*, currentBuildingDoorsStatus: Boolean*/
+case class BuildingUser(private val parentActor: ActorRef, from: Int, target: Int, tickToWait: Int = 0, tickToGo: Int = 0, status: BuildingUserStatus = WAITING) {
 
     def tick(building: Building): BuildingUser = {
-        //val userCanEnterIntoElevator = building.doorIsOpen && building.floor == from
-        // if(userCanEnterIntoElevator) status = TRAVELLING // SendEventToPlayer(UserHasEntered) + SendEventToPlayer(Go(user))
-        // if(userCanLeaveTheElevator) status = DONE // SendEventToPlayer(UserHasExited)
-        // if(userIsTravelling) tickToGo = this.tickToGo + 1
-        // if(userIsWaiting) tickToWait = this.tickToWait + 1
+        val userCanEnterIntoElevator = building.doorIsOpen && building.floor == from
+        val userCanLeaveTheElevator = building.doorIsOpen && building.floor == target
 
+        val new_tickToWait = if(status == WAITING) tickToWait + 1 else tickToWait
+        val new_tickToGo = if(status == TRAVELLING) tickToGo + 1 else tickToGo
 
-        this.copy(tickToWait = tickToWait + 1)
-    }   // TODO implement method
+        val new_status = if(userCanEnterIntoElevator) TRAVELLING
+                         else if(userCanLeaveTheElevator) DONE
+                         else status
+
+        val user = BuildingUser(parentActor, from = this.from, target = this.target, tickToWait = new_tickToWait, tickToGo = new_tickToGo, status = new_status)
+
+        if(userCanEnterIntoElevator) {
+            parentActor ! SendEventToPlayer(Go(user))
+            parentActor ! SendEventToPlayer(UserHasEntered)
+        }
+
+        if(userCanLeaveTheElevator) parentActor ! SendEventToPlayer(UserHasExited)
+
+        user
+    }
 
     // TODO quand le user est arrivé comment je calcul le score et comment je l'envoi à building ?
 }
