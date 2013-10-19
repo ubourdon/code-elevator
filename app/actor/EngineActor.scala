@@ -14,6 +14,7 @@ import model.Building
 import scala.util.Try
 import concurrent.duration._
 
+
 /**
  *    Toutes les secondes essayer de rajouter un utilisateur d'ascenseur dans l'immeuble - limite max
  *    l'utilisateur à un étage d'origine et une destination
@@ -52,6 +53,8 @@ class EngineActor(private val player: Player,
                 case Go(user) =>
                     building = sendEventToPlayer(s"/go?floorToGo=${user.target}")  // TODO test l'envoi de requete http
                     playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+
+                case Reset(cause) => sendEventToPlayer(s"/reset?cause=$cause")         // TODO test l'envoi de requete http
             }
         }
 
@@ -74,7 +77,7 @@ class EngineActor(private val player: Player,
     private def sendEventToPlayer(path: String): Building =
         Try(Await.result(WS.url(serverUrl + path).get(), 1 second))
             .map { resp => if (resp.status != 200) throw new IllegalStateException() else building}
-            .getOrElse(building.reset())
+            .getOrElse(building.reset(self, ResetCause(s"player don't respond 200 when sending event [$path]")))
 
 
     private def buildNewBuildingFromNextCommand(response: Response): Validation[IncoherentInstructionForStateBuilding, Building] = {
@@ -97,6 +100,9 @@ case class SendEventToPlayer(event: CodeElevatorEvent)
 sealed trait CodeElevatorEvent
 case class Go(user: BuildingUser) extends CodeElevatorEvent
 case object UserHasEntered extends CodeElevatorEvent
+case class Reset(cause: ResetCause) extends CodeElevatorEvent
+
+case class ResetCause(message: String)
 
 sealed trait NextCommand
 object NextCommand {

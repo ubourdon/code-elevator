@@ -1,7 +1,7 @@
 package actor
 
-import akka.testkit.{TestProbe, TestActorRef, ImplicitSender, TestKit}
-import akka.actor.{Props, ActorRef, ActorSystem}
+import akka.testkit.{TestActorRef, ImplicitSender, TestKit}
+import akka.actor.{ActorRef, ActorSystem}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.mock.MockitoSugar
@@ -13,6 +13,10 @@ import fr.simply.fixture.StubServerFixture
 import testing.tools.{ActorTestingTools, ActorStub}
 import concurrent.duration._
 import scalaz.Scalaz._
+import org.mockito.Matchers._
+import org.mockito.Mockito._
+import play.api.libs.ws.WS
+import play.api.libs.ws.WS.WSRequestHolder
 
 class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers
                       with BeforeAndAfterAll with BeforeAndAfter with MockitoSugar
@@ -135,7 +139,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.addBuildingUser(Matchers.any[ActorRef])).thenReturn(building)
+        Mockito.when(building.addBuildingUser(any[ActorRef])).thenReturn(building)
         Mockito.when(building.tick()).thenReturn(building)
 
         withStubServerFixture(8080, route) { server =>
@@ -151,7 +155,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
     test("when engineActor ! CallPlayer & player server don't respond, should playerActor ! UpdatePlayerInfo with reset") {
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.reset()).thenReturn(building)
+        Mockito.when(building.reset(any[ActorRef], any[ResetCause])).thenReturn(building)
         val user = mock[BuildingUser]
 
         TestActorRef(new ActorStub(testActor), "players")
@@ -166,7 +170,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
     test("when engineActor ! SendEventToPlayer(UserHasEntered) & player server don't respond, should call ! UpdatePlayerInfo with reset") {
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.reset()).thenReturn(building)
+        Mockito.when(building.reset(any[ActorRef], any[ResetCause])).thenReturn(building)
 
         TestActorRef(new ActorStub(testActor), "players")
 
@@ -180,7 +184,7 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
     test("when engineActor ! SendEventToPlayer(Go(user)) & player server don't respond, should call ! UpdatePlayerInfo with reset") {
         val player = Player("toto", "titi", "tata")
         val building = mock[Building]
-        Mockito.when(building.reset()).thenReturn(building)
+        Mockito.when(building.reset(any[ActorRef], any[ResetCause])).thenReturn(building)
         val user = mock[BuildingUser]
 
         TestActorRef(new ActorStub(testActor), "players")
@@ -191,4 +195,22 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
 
         expectMsg(1 second, UpdatePlayerInfo(new PlayerInfo(player, building)))
     }
+
+    /*test("when engine ! SendEventToPlayer(Reset(cause)) should send GET /reset?cause=information+message") {
+        mockObject(WS)
+        val req = mock[WSRequestHolder]
+        when(ws.url(any[String])).thenReturn(req)
+
+        trait StubHttpClient extends HttpClient { override def WebService = ws }
+
+        val player = Player("toto", "titi", "tata")
+        val building = mock[Building]
+
+        val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:8080", building) with StubHttpClient)
+
+        engineActor ! SendEventToPlayer(Reset(ResetCause("cause")))
+
+        verify(ws).url("http://localhost:8080/reset?cause=cause")
+        verify(req).get()
+    }*/
 }

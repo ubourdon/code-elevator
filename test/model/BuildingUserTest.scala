@@ -13,6 +13,14 @@ class BuildingUserTest extends TestKit(ActorSystem("test")) with FunSuite with S
 
     override def afterAll() { system.shutdown() }
 
+    test("when BuildingUser.tick() should increment tickToWait") {
+        BuildingUser(null, 0, 0).tick(mock[Building]) should be (BuildingUser(null, 0, 0, tickToWait = 1))
+    }
+
+    test("when BuildingUser.tick()") {
+
+    }
+
     // créer User si limite pas dépassée
     // BuildingUser(from, target, tickToWait, tickToGo, currentBuildingFloor, currentBuildingDoorsStatus, status: Waiting/travelling/DONE)
 

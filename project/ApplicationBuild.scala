@@ -10,6 +10,7 @@ object ApplicationBuild extends Build {
         "org.scalaz" %% "scalaz-core" % "7.0.4",
         "org.scalatest" %% "scalatest" % "1.9.1" % "test",
         "org.mockito" % "mockito-all" % "1.9.0" % "test",
+        /*"org.scalamock" %% "scalamock-scalatest-support" % "3.0.1" % "test",*/
         "com.typesafe.akka" %% "akka-testkit" % "2.2.1" % "test",
         "com.github.simplyscala" %% "simplyscala-server" % "0.5" % "test"
     )

@@ -41,7 +41,16 @@ object BuildingUser {
 /*, currentBuildingFloor: Int*//*, currentBuildingDoorsStatus: Boolean, tickToGo: Int = 0*/
 case class BuildingUser(private val parentActor: ActorRef, from: Int, target: Int, tickToWait: Int = 0, status: BuildingUserStatus = WAITING) {
 
-    def tick(): BuildingUser = null   // TODO implement method   besoin de l'état du building ???
+    def tick(building: Building): BuildingUser = {
+        //val userCanEnterIntoElevator = building.doorIsOpen && building.floor == from
+        // if(userCanEnterIntoElevator) status = TRAVELLING // SendEventToPlayer(UserHasEntered) + SendEventToPlayer(Go(user))
+        // if(userCanLeaveTheElevator) status = DONE // SendEventToPlayer(UserHasExited)
+        // if(userIsTravelling) tickToGo = this.tickToGo + 1
+        // if(userIsWaiting) tickToWait = this.tickToWait + 1
+
+
+        this.copy(tickToWait = tickToWait + 1)
+    }   // TODO implement method
 
     // TODO quand le user est arrivé comment je calcul le score et comment je l'envoi à building ?
 }

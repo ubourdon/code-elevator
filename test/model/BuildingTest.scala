@@ -5,9 +5,10 @@ import org.scalatest.matchers.ShouldMatchers
 import scalaz.{Failure, Success}
 import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito
-import akka.testkit.{TestKit, TestActorRef}
-import actor.EngineActor
+import akka.testkit.{TestProbe, TestActorRef, TestKit}
+import actor.{ResetCause, Reset, SendEventToPlayer, EngineActor}
 import akka.actor.ActorSystem
+import org.mockito.Matchers._
 
 class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers with MockitoSugar with BeforeAndAfterAll {
 
@@ -33,7 +34,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
-        Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
+        Mockito.when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
         Building(users = List(buildingUser)).up() should be (Success(Building(floor = 1, users = List(expectedBuildingUser))))
     }
@@ -58,7 +59,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
-        Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
+        Mockito.when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
         Building(floor = 1, users = List(buildingUser)).down() should be (Success(Building(users = List(expectedBuildingUser))))
     }
@@ -79,7 +80,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
-        Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
+        Mockito.when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
         Building(doorIsOpen = true, users = List(buildingUser)).close() should be (Success(Building(users = List(expectedBuildingUser))))
     }
@@ -100,7 +101,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
-        Mockito.when(buildingUser.tick()).thenReturn(expectedBuildingUser)
+        Mockito.when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
         Building(users = List(buildingUser)).open() should be (Success(Building(doorIsOpen = true, users = List(expectedBuildingUser))))
     }
@@ -119,8 +120,27 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
 
     test("when Building.tick(), building.users.tick should be call") {
         val user = mock[BuildingUser]
-        Building(users = List(user)).tick()
+        val building = Building(users = List(user))
+        building.tick()
 
-        Mockito.verify(user).tick()
+        Mockito.verify(user).tick(building)
+    }
+
+    /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                     Building.reset()                             *
+     ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    test("Building.reset() should return building reseted with -10 score") {
+        val user = mock[BuildingUser]
+        val building = Building(score = 10, peopleInTheElevator = 1, peopleWaitingTheElevator = Vector(0,0,0,0,0,1), doorIsOpen = true, floor = 0, users = List(user))
+        building.reset(TestProbe().ref, ResetCause("")) should be (Building(score = 0))
+    }
+
+    test("Building.reset() should send engine ! SendEventToPlayer(Reset)") {
+        val parentActor = TestProbe()
+
+        Building().reset(parentActor.ref, ResetCause("reset"))
+
+        parentActor.expectMsg(SendEventToPlayer(Reset(ResetCause("reset"))))
     }
 }

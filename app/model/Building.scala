@@ -3,6 +3,7 @@ package model
 import scalaz._
 import Scalaz._
 import akka.actor.ActorRef
+import actor.{ResetCause, Reset, SendEventToPlayer}
 
 case class Building(score: Int = 0,
                     peopleWaitingTheElevator: Vector[Int] = Vector(0, 0, 0, 0, 0, 0),
@@ -20,7 +21,10 @@ case class Building(score: Int = 0,
 
     def tick(): Building = notifyTickToUsers(this)
 
-    def reset(): Building = null // TODO implement method   reset Building but old score - 10  + GET /reset?cause=information+message
+    def reset(parentActor: ActorRef, resetCause: ResetCause): Building = {
+        parentActor ! SendEventToPlayer(Reset(resetCause))
+        Building(score = score - 10)
+    }
 
     def up(): Validation[IncoherentInstructionForStateBuilding, Building] =
         if(doorIsOpen) IncoherentInstructionForStateBuilding("the door is opened").fail
@@ -42,7 +46,7 @@ case class Building(score: Int = 0,
 
     private def maxUserIsReached: Boolean = this.users.size >= maxUser
 
-    private def notifyTickToUsers(building: Building): Building = building.copy(users = building.users.map( _.tick() ))
+    private def notifyTickToUsers(building: Building): Building = building.copy(users = building.users.map( _.tick(this) ))
 }
 
 case class IncoherentInstructionForStateBuilding(message: String)
