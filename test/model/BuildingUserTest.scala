@@ -50,7 +50,6 @@ class BuildingUserTest extends TestKit(ActorSystem("test")) with FunSuite with S
         }
     }
 
-    // TODO DONE is useful status ??? see above building & engine
     test("if user is travelling & can leave the elevator, when BuildingUser.tick() status should be DONE") {
         val engine = TestProbe().ref
         val building = mock[Building]

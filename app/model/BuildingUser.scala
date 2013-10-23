@@ -66,8 +66,6 @@ case class BuildingUser(private val parentActor: ActorRef, from: Int, target: In
 
         user
     }
-
-    // TODO quand le user est arrivé comment je calcul le score et comment je l'envoi à building ?
 }
 
 sealed trait BuildingUserStatus

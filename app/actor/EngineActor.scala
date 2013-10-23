@@ -26,6 +26,8 @@ class EngineActor(private val player: Player,
 
     private val playersActor = context.system.actorSelection(context.system / "players")
 
+    // TODO quand le user est arrivé comment je calcul le score et comment je l'envoi à building ?
+
     def receive = {
         case Tick => {
             building = building.addBuildingUser(self)
@@ -47,8 +49,12 @@ class EngineActor(private val player: Player,
         case SendEventToPlayer(event) => {
             event match {
                 case UserHasEntered =>
-                    building = sendEventToPlayer("/userHasEntered")
-                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))  // TODO test l'envoi de requete http
+                    building = sendEventToPlayer("/userHasEntered")   // TODO test l'envoi de requete http
+                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+
+                case UserHasExited =>
+                    building = sendEventToPlayer("/userHasExited")
+                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
 
                 case Go(user) =>
                     building = sendEventToPlayer(s"/go?floorToGo=${user.target}")  // TODO test l'envoi de requete http
