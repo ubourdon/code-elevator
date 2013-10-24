@@ -199,6 +199,19 @@ class EngineActorTest extends TestKit(ActorSystem("test")) with FunSuite with Sh
         expectMsg(1 second, UpdatePlayerInfo(new PlayerInfo(player, building)))
     }
 
+    test("when engineActor ! Reset(cause) should send playersActor ! UpdatePlayerInfo()") {
+        val player = Player("toto", "titi", "tata")
+        val building = mock[Building]
+
+        TestActorRef(new ActorStub(testActor), "players")
+
+        val engineActor = TestActorRef(new EngineActor(player, s"http://localhost:8080", building))
+
+        engineActor ! SendEventToPlayer(Reset(ResetCause("failure")))
+
+        expectMsg(UpdatePlayerInfo(new PlayerInfo(player, building, "failure")))
+    }
+
     /*test("when engine ! SendEventToPlayer(Reset(cause)) should send GET /reset?cause=information+message") {
         mockObject(WS)
         val req = mock[WSRequestHolder]

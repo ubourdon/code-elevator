@@ -12,9 +12,9 @@ case class PlayerInfo(pseudo: String,
                       lastErrorMessage: String,
                       state: String) {
 
-    def this(player: Player, building: Building = Building()) =
+    def this(player: Player, building: Building = Building(), lastErrorMessage: String = "") =
         this(player.pseudo, player.email, building.score, building.peopleWaitingTheElevator, building.floor,
-             building.peopleInTheElevator, building.doorIsOpen, "last error message", "RESUME")
+             building.peopleInTheElevator, building.doorIsOpen, lastErrorMessage, "RESUME")
 }
 
 trait PlayerJsonSerializer {

@@ -22,7 +22,8 @@ import concurrent.duration._
  */
 class EngineActor(private val player: Player,
                   private val serverUrl: String,
-                  private var building: Building = Building()) extends Actor with ActorLogging {
+                  private var building: Building = Building(),
+                  private var lastErrorMessage: String = "") extends Actor with ActorLogging {
 
     private val playersActor = context.system.actorSelection(context.system / "players")
 
@@ -41,24 +42,28 @@ class EngineActor(private val player: Player,
             val direction = if((user.from - user.target) < 0 ) "UP" else "DOWN"
 
             building = sendEventToPlayer(s"/call?atFloor=${user.from}&to=$direction")    // TODO test l'envoi de requete http
-            playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+            updatePlayerInfo()
         }
 
         case SendEventToPlayer(event) => {
             event match {
                 case UserHasEntered =>
                     building = sendEventToPlayer("/userHasEntered")   // TODO test l'envoi de requete http
-                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+                    updatePlayerInfo()
 
                 case UserHasExited =>
                     building = sendEventToPlayer("/userHasExited")
-                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+                    updatePlayerInfo()
 
                 case Go(user) =>
                     building = sendEventToPlayer(s"/go?floorToGo=${user.target}")  // TODO test l'envoi de requete http
-                    playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+                    updatePlayerInfo()
 
-                case Reset(cause) => sendEventToPlayer(s"/reset?cause=$cause")         // TODO test l'envoi de requete http
+                // TODO reset fail => -10
+                case Reset(cause) =>
+                    sendEventToPlayer(s"/reset?cause=$cause")         // TODO test l'envoi de requete http
+                    lastErrorMessage = cause.message
+                    updatePlayerInfo()
             }
         }
 
@@ -71,7 +76,7 @@ class EngineActor(private val player: Player,
 
             new_building_valid.map { new_building =>
                 building = new_building           // TODO !!! accès concurrent à building ???
-                playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building))
+                updatePlayerInfo()
             }
         }
 
@@ -81,8 +86,11 @@ class EngineActor(private val player: Player,
     private def sendEventToPlayer(path: String): Building =
         Try(Await.result(WS.url(serverUrl + path).get(), 1 second))
             .map { resp => if (resp.status != 200) throw new IllegalStateException() else building}
-            .getOrElse(building.reset(self, ResetCause(s"player don't respond 200 when sending event [$path]")))
+            .getOrElse(building.reset(self, ResetCause(s"player don't respond 200 when sending event [${path.split("\\?")(0)}]")))
 
+    private def updatePlayerInfo() {
+        playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building, lastErrorMessage))
+    }
 
     private def buildNewBuildingFromNextCommand(response: Response): Validation[IncoherentInstructionForStateBuilding, Building] = {
         import scalaz.Scalaz._
@@ -93,7 +101,7 @@ class EngineActor(private val player: Player,
             case OPEN => building.open()
             case CLOSE => building.close()
             case NOTHING => log.info("nothing"); building.tick().success
-            case UNKNNOW_COMMAND => log.error("unknown command !"); building.tick().success     // TODO unknown command building.reset()  // TODO test
+            case UNKNNOW_COMMAND => log.error(s"unknown command ! : ${response.body}"); building.tick().success     // TODO unknown command building.reset()  // TODO test
         }
     }
 }
