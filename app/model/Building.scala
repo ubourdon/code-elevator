@@ -5,6 +5,9 @@ import Scalaz._
 import akka.actor.ActorRef
 import actor.{ResetCause, Reset, SendEventToPlayer}
 
+// TODO people waiting on the elevator
+// TODO people in the elevator
+
 case class Building(score: Int = 0,
                     peopleWaitingTheElevator: Vector[Int] = Vector(0, 0, 0, 0, 0, 0),
                     peopleInTheElevator: Int = 0,
@@ -46,7 +49,29 @@ case class Building(score: Int = 0,
 
     private def maxUserIsReached: Boolean = this.users.size >= maxUser
 
-    private def notifyTickToUsers(building: Building): Building = building.copy(users = building.users.map( _.tick(this) ))
+    private def notifyTickToUsers(building: Building): Building = {
+        val new_building = building.copy(users = building.users.map( _.tick(this) ))
+
+        new_building.copy(
+            score = new_building.score +
+                new_building.users
+                    .filter(_.status == DONE)
+                    .map(score(_))
+                    .reduceOption(_ + _)
+                    .getOrElse(score),
+            users = new_building.users.filterNot(_.status == DONE)
+        )
+    }
+
+    private def score(user: BuildingUser): Int = {
+        val score = 20 - user.tickToWait - user.tickToGo + bestTickToGo(user.from, user.target)
+
+        if(score > 20) 20
+        else if(score < 0) 0
+        else score
+    }
+
+    private def bestTickToGo(from: Int, target: Int): Int = Math.abs(target - from) + 2
 }
 
 case class IncoherentInstructionForStateBuilding(message: String)

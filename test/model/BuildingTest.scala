@@ -4,11 +4,11 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
 import scalaz.{Failure, Success}
 import org.scalatest.mock.MockitoSugar
-import org.mockito.Mockito
 import akka.testkit.{TestProbe, TestActorRef, TestKit}
 import actor.{ResetCause, Reset, SendEventToPlayer, EngineActor}
 import akka.actor.ActorSystem
 import org.mockito.Matchers._
+import org.mockito.Mockito._
 
 class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers with MockitoSugar with BeforeAndAfterAll {
 
@@ -34,7 +34,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
-        Mockito.when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
+        when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
         Building(users = List(buildingUser)).up() should be (Success(Building(floor = 1, users = List(expectedBuildingUser))))
     }
@@ -59,7 +59,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
-        Mockito.when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
+        when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
         Building(floor = 1, users = List(buildingUser)).down() should be (Success(Building(users = List(expectedBuildingUser))))
     }
@@ -80,7 +80,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
-        Mockito.when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
+        when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
         Building(doorIsOpen = true, users = List(buildingUser)).close() should be (Success(Building(users = List(expectedBuildingUser))))
     }
@@ -101,7 +101,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val expectedBuildingUser = BuildingUser(parentActor = null, tickToWait = 1, from = 0, target = 1)
 
         val buildingUser = mock[BuildingUser]
-        Mockito.when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
+        when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
         Building(users = List(buildingUser)).open() should be (Success(Building(doorIsOpen = true, users = List(expectedBuildingUser))))
     }
@@ -120,10 +120,14 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
 
     test("when Building.tick(), building.users.tick should be call") {
         val user = mock[BuildingUser]
+        when(user.status).thenReturn(WAITING)
+        when(user.tick(any[Building])).thenReturn(user)
+
         val building = Building(users = List(user))
+
         building.tick()
 
-        Mockito.verify(user).tick(building)
+        verify(user).tick(building)
     }
 
     /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -143,4 +147,46 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
 
         parentActor.expectMsg(SendEventToPlayer(Reset(ResetCause("reset"))))
     }
+
+    /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                      USER DONE - SCORE                           *
+     ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    // https://github.com/xebia-france/code-elevator/blob/master/elevator-server/src/main/java/elevator/server/Score.java
+    test("if user status is DONE when Building.open(), should calcul score") {
+        import scalaz.Scalaz._
+
+        val user = mock[BuildingUser]
+        when(user.tick(any[Building]))
+            .thenReturn(BuildingUser(null, 0, 1, tickToGo = 0, tickToWait = 0, status = DONE))
+            .thenReturn(BuildingUser(null, 0, 1, tickToGo = 10, tickToWait = 0, status = DONE))
+            .thenReturn(BuildingUser(null, 0, 1, tickToGo = 20, tickToWait = 20, status = DONE))
+            .thenReturn(BuildingUser(null, 0, 1, tickToGo = 20, tickToWait = 20, status = DONE))
+
+        Building(users = List(user)).open().map(_.score) should be (20.success)
+        Building(users = List(user)).open().map(_.score) should be (13.success)
+        Building(users = List(user)).open().map(_.score) should be (0.success)
+        Building(score = 1, users = List(user)).open().map(_.score) should be (1.success)
+    }
+
+    test("if user status is DONE when Building.open(), should delete this user") {
+        import scalaz.Scalaz._
+
+        val user = mock[BuildingUser]
+        when(user.tick(any[Building]))
+            .thenReturn(BuildingUser(null, 0, 1, tickToGo = 0, tickToWait = 0, status = DONE))
+
+        Building(users = List(user)).open().map(_.users) should be (Nil.success)
+    }
+
+    /*private Integer bestTickToGo(Integer floor, Integer floorToGo) {
+        // elevator is OPEN at floor
+        final Integer elevatorHasToCloseDoorsWhenAtFloor = 1;
+        final Integer elevatorGoesStraightFromFloorToFloorToGo = abs(floorToGo - floor);
+        final Integer elevatorHasToOpenDoorsWhenAtFloorToGo = 1;
+
+        return elevatorHasToCloseDoorsWhenAtFloor
+        + elevatorGoesStraightFromFloorToFloorToGo
+        + elevatorHasToOpenDoorsWhenAtFloorToGo;
+    }*/
 }

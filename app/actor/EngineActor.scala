@@ -26,8 +26,6 @@ class EngineActor(private val player: Player,
 
     private val playersActor = context.system.actorSelection(context.system / "players")
 
-    // TODO quand le user est arrivé comment je calcul le score et comment je l'envoi à building ?
-
     def receive = {
         case Tick => {
             building = building.addBuildingUser(self)
@@ -95,7 +93,7 @@ class EngineActor(private val player: Player,
             case OPEN => building.open()
             case CLOSE => building.close()
             case NOTHING => log.info("nothing"); building.tick().success
-            case UNKNNOW_COMMAND => log.error("unknown command !"); building.tick().success     // TODO unknown command ???  // TODO test
+            case UNKNNOW_COMMAND => log.error("unknown command !"); building.tick().success     // TODO unknown command building.reset()  // TODO test
         }
     }
 }
