@@ -11,7 +11,8 @@ class PlayersActor(private var players: Set[PlayerInfo] = Set(), private var pla
             players = players + new PlayerInfo(player)
             log.info(s"user register : ${players.size}")
             // TODO refuser un nouveau joueur si email déjà pris
-
+            // TODO clean url rentré par le participant
+                // pas de http en doublon, pas de slash à la fin
             playerEngines = playerEngines + createEngine(player, serverUrl)
         }
 

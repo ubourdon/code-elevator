@@ -58,7 +58,7 @@ case class Building(score: Int = 0,
                     .filter(_.status == DONE)
                     .map(score(_))
                     .reduceOption(_ + _)
-                    .getOrElse(score),
+                    .getOrElse(0),
             users = new_building.users.filterNot(_.status == DONE)
         )
     }

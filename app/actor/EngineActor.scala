@@ -59,9 +59,8 @@ class EngineActor(private val player: Player,
                     building = sendEventToPlayer(s"/go?floorToGo=${user.target}")  // TODO test l'envoi de requete http
                     updatePlayerInfo()
 
-                // TODO reset fail => -10
                 case Reset(cause) =>
-                    sendEventToPlayer(s"/reset?cause=$cause")         // TODO test l'envoi de requete http
+                    sendEventToPlayer(s"/reset?cause=${cause.message}")         // TODO test l'envoi de requete http
                     lastErrorMessage = cause.message
                     updatePlayerInfo()
             }
@@ -83,10 +82,12 @@ class EngineActor(private val player: Player,
         // TODO Validation.Failure case ???  building.reset() + GET /reset?cause=information+message
     }
 
-    private def sendEventToPlayer(path: String): Building =
+    private def sendEventToPlayer(path: String): Building = {
+        //println(s"url send : ${serverUrl + path}")
         Try(Await.result(WS.url(serverUrl + path).get(), 1 second))
             .map { resp => if (resp.status != 200) throw new IllegalStateException() else building}
             .getOrElse(building.reset(self, ResetCause(s"player don't respond 200 when sending event [${path.split("\\?")(0)}]")))
+    }
 
     private def updatePlayerInfo() {
         playersActor ! UpdatePlayerInfo(new PlayerInfo(player, building, lastErrorMessage))
@@ -101,7 +102,7 @@ class EngineActor(private val player: Player,
             case OPEN => building.open()
             case CLOSE => building.close()
             case NOTHING => log.info("nothing"); building.tick().success
-            case UNKNNOW_COMMAND => log.error(s"unknown command ! : ${response.body}"); building.tick().success     // TODO unknown command building.reset()  // TODO test
+            case UNKNNOW_COMMAND => log.error(s"unknown command ! : ${response.status}"); building.tick().success     // TODO unknown command building.reset()  // TODO test
         }
     }
 }
