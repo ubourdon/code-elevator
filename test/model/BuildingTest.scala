@@ -9,6 +9,8 @@ import actor.{ResetCause, Reset, SendEventToPlayer, EngineActor}
 import akka.actor.ActorSystem
 import org.mockito.Matchers._
 import org.mockito.Mockito._
+import scalaz.Scalaz._
+
 
 class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers with MockitoSugar with BeforeAndAfterAll {
 
@@ -106,6 +108,15 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         Building(users = List(buildingUser)).open() should be (Success(Building(doorIsOpen = true, users = List(expectedBuildingUser))))
     }
 
+    test("if user can enter into the elevator, when Building.open should value people in the elevator") {
+        val expectedBuildingUser = BuildingUser(parentActor = null, from = 0, target = 1, status = TRAVELLING)
+
+        val buildingUser = mock[BuildingUser]
+        when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
+
+        Building(users = List(buildingUser)).open() should be (Building(doorIsOpen = true, peopleInTheElevator = 1, users = List(expectedBuildingUser)).success)
+    }
+
     /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                     Building.addBuildingUser()                   *
      ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -154,8 +165,6 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
 
     // https://github.com/xebia-france/code-elevator/blob/master/elevator-server/src/main/java/elevator/server/Score.java
     test("if user status is DONE when Building.open(), should calcul score") {
-        import scalaz.Scalaz._
-
         val user = mock[BuildingUser]
         when(user.tick(any[Building]))
             .thenReturn(BuildingUser(null, 0, 1, tickToGo = 0, tickToWait = 0, status = DONE))

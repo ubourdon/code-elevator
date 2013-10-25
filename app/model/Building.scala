@@ -59,7 +59,8 @@ case class Building(score: Int = 0,
                     .map(score(_))
                     .reduceOption(_ + _)
                     .getOrElse(0),
-            users = new_building.users.filterNot(_.status == DONE)
+            users = new_building.users.filterNot(_.status == DONE),
+            peopleInTheElevator = new_building.users.filter(_.status == TRAVELLING).size
         )
     }
 
