@@ -4,9 +4,9 @@ import scalaz._
 import Scalaz._
 import akka.actor.ActorRef
 import actor.{ResetCause, Reset, SendEventToPlayer}
+import scala.annotation.tailrec
 
 // TODO people waiting on the elevator
-// TODO people in the elevator
 
 case class Building(score: Int = 0,
                     peopleWaitingTheElevator: Vector[Int] = Vector(0, 0, 0, 0, 0, 0),
@@ -15,11 +15,18 @@ case class Building(score: Int = 0,
                     maxFloor: Int = 5,
                     floor: Int = 0,
                     maxUser: Int = 3,
-                    users: List[BuildingUser] = Nil) {
+                    users: List[BuildingUser] = Nil) extends BuildingUserRandomCreator {
 
     def addBuildingUser(parentActor: ActorRef): Building = {
         if(maxUserIsReached) this
-        else this.copy(users = BuildingUser.randomCreate(building = this, parentActor = parentActor) :: this.users)
+        else {
+            val new_user = createUser(building = this, parentActor = parentActor)
+
+            this.copy(
+                users = new_user :: this.users,
+                peopleWaitingTheElevator = addPeopleWaitingTheElevator(new_user)
+            )
+        }
     }
 
     def tick(): Building = notifyTickToUsers(this)
@@ -60,8 +67,22 @@ case class Building(score: Int = 0,
                     .reduceOption(_ + _)
                     .getOrElse(0),
             users = new_building.users.filterNot(_.status == DONE),
-            peopleInTheElevator = new_building.users.filter(_.status == TRAVELLING).size
+            peopleInTheElevator = new_building.users.filter(_.status == TRAVELLING).size,
+            peopleWaitingTheElevator = buildVector(Vector(0,0,0,0,0,0), new_building.users.filter( _.status == WAITING ))
+
         )
+    }
+
+    private def addPeopleWaitingTheElevator(new_user: BuildingUser): Vector[Int] = {
+        val peopleNumberWaitingInFloor = this.peopleWaitingTheElevator.apply(new_user.from) + 1
+        this.peopleWaitingTheElevator.updated(new_user.from, peopleNumberWaitingInFloor)
+    }
+
+    private def buildVector(vector: Vector[Int], users: List[BuildingUser]): Vector[Int] = {
+        users match {
+            case user :: tail => buildVector(vector.updated(user.from, vector.apply(user.from) + 1), tail)
+            case Nil => vector
+        }
     }
 
     private def score(user: BuildingUser): Int = {

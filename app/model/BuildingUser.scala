@@ -7,6 +7,11 @@ import actor.Go
 import actor.CallPlayer
 import actor.SendEventToPlayer
 
+trait BuildingUserRandomCreator {
+    def createUser(building: Building, parentActor: ActorRef, random: Random = new Random()): BuildingUser =
+        BuildingUser.randomCreate(building, parentActor, random)
+}
+
 object BuildingUser {
     def randomCreate(building: Building, parentActor: ActorRef, random: Random = new Random()): BuildingUser = {
         val random_from = if(random.nextBoolean()) 0 else random.nextInt(building.maxFloor) + 1

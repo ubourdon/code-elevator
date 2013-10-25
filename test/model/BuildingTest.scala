@@ -2,14 +2,15 @@ package model
 
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
-import scalaz.{Failure, Success}
+import scalaz.{Validation, Failure, Success}
 import org.scalatest.mock.MockitoSugar
 import akka.testkit.{TestProbe, TestActorRef, TestKit}
 import actor.{ResetCause, Reset, SendEventToPlayer, EngineActor}
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import scalaz.Scalaz._
+import scala.util.Random
 
 
 class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with ShouldMatchers with MockitoSugar with BeforeAndAfterAll {
@@ -38,7 +39,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val buildingUser = mock[BuildingUser]
         when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
-        Building(users = List(buildingUser)).up() should be (Success(Building(floor = 1, users = List(expectedBuildingUser))))
+        Building(users = List(buildingUser)).up() should be (Success(Building(floor = 1, users = List(expectedBuildingUser), peopleWaitingTheElevator = Vector(1,0,0,0,0,0))))
     }
 
     /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -63,7 +64,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val buildingUser = mock[BuildingUser]
         when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
-        Building(floor = 1, users = List(buildingUser)).down() should be (Success(Building(users = List(expectedBuildingUser))))
+        Building(floor = 1, users = List(buildingUser)).down() should be (Success(Building(users = List(expectedBuildingUser), peopleWaitingTheElevator = Vector(1,0,0,0,0,0))))
     }
 
     /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -84,7 +85,7 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val buildingUser = mock[BuildingUser]
         when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
-        Building(doorIsOpen = true, users = List(buildingUser)).close() should be (Success(Building(users = List(expectedBuildingUser))))
+        Building(doorIsOpen = true, users = List(buildingUser)).close() should be (Success(Building(users = List(expectedBuildingUser), peopleWaitingTheElevator = Vector(1,0,0,0,0,0))))
     }
 
     /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -105,16 +106,43 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         val buildingUser = mock[BuildingUser]
         when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
 
-        Building(users = List(buildingUser)).open() should be (Success(Building(doorIsOpen = true, users = List(expectedBuildingUser))))
+        Building(users = List(buildingUser)).open() should be (Success(Building(doorIsOpen = true, users = List(expectedBuildingUser), peopleWaitingTheElevator = Vector(1,0,0,0,0,0))))
     }
 
-    test("if user can enter into the elevator, when Building.open should value people in the elevator") {
-        val expectedBuildingUser = BuildingUser(parentActor = null, from = 0, target = 1, status = TRAVELLING)
+    test("value peopleWaitingTheElevator when Building.open()") {
+        val user = mock[BuildingUser]
+        when(user.tick(any[Building])).thenReturn(user)
+        when(user.status).thenReturn(WAITING)
+        when(user.from).thenReturn(0)
 
-        val buildingUser = mock[BuildingUser]
-        when(buildingUser.tick(any[Building])).thenReturn(expectedBuildingUser)
+        val result = Building(users = List(user), peopleWaitingTheElevator = Vector(0, 0, 0, 0, 0, 0)).open().map(_.peopleWaitingTheElevator)
 
-        Building(users = List(buildingUser)).open() should be (Building(doorIsOpen = true, peopleInTheElevator = 1, users = List(expectedBuildingUser)).success)
+        result should be (Vector(1, 0, 0, 0, 0, 0).success)
+    }
+
+    test("if user enter into elevator, when Building.open(), should update peopleWaitingTheElevator") {
+        val user = mock[BuildingUser]
+        when(user.tick(any[Building])).thenReturn(user)
+        when(user.status).thenReturn(TRAVELLING)
+        when(user.from).thenReturn(0)
+
+        val result = Building(users = List(user), peopleWaitingTheElevator = Vector(1, 0, 0, 0, 0, 0)).open().map(_.peopleWaitingTheElevator)
+        result should be (Vector(0, 0, 0, 0, 0, 0).success)
+    }
+
+    test("change peopleWaitingTheElevator only if user enter into elevator") {
+        val userTravelling = mock[BuildingUser]
+        when(userTravelling.tick(any[Building])).thenReturn(userTravelling)
+        when(userTravelling.status).thenReturn(TRAVELLING)
+        when(userTravelling.from).thenReturn(0)
+
+        val userWillTravelling = mock[BuildingUser]
+        when(userWillTravelling.tick(any[Building])).thenReturn(userWillTravelling)
+        when(userTravelling.from).thenReturn(1)
+        when(userWillTravelling.status).thenReturn(WAITING).thenReturn(TRAVELLING)
+
+        val result = Building(users = List(userTravelling), peopleWaitingTheElevator = Vector(0, 0, 0, 0, 0, 0)).open().map(_.peopleWaitingTheElevator)
+        result should be (Vector(0, 0, 0, 0, 0, 0).success)
     }
 
     /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -139,6 +167,19 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
         building.tick()
 
         verify(user).tick(building)
+    }
+
+    test("when Building.addBuildingUser(), should update peopleWaitingTheElevator") {
+        val user = mock[BuildingUser]
+        when(user.from).thenReturn(0)
+
+        trait BuildingUserDeterministicCreator extends BuildingUserRandomCreator {
+            override def createUser(building: Building, parentActor: ActorRef, random: Random = new Random()) = user
+        }
+
+        val building = new Building() with BuildingUserDeterministicCreator
+
+        building.addBuildingUser(null).peopleWaitingTheElevator should be (Vector(1, 0, 0, 0, 0, 0))
     }
 
     /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -187,15 +228,4 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
 
         Building(users = List(user)).open().map(_.users) should be (Nil.success)
     }
-
-    /*private Integer bestTickToGo(Integer floor, Integer floorToGo) {
-        // elevator is OPEN at floor
-        final Integer elevatorHasToCloseDoorsWhenAtFloor = 1;
-        final Integer elevatorGoesStraightFromFloorToFloorToGo = abs(floorToGo - floor);
-        final Integer elevatorHasToOpenDoorsWhenAtFloorToGo = 1;
-
-        return elevatorHasToCloseDoorsWhenAtFloor
-        + elevatorGoesStraightFromFloorToFloorToGo
-        + elevatorHasToOpenDoorsWhenAtFloorToGo;
-    }*/
 }
