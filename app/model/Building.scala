@@ -6,8 +6,6 @@ import akka.actor.ActorRef
 import actor.{ResetCause, Reset, SendEventToPlayer}
 import scala.annotation.tailrec
 
-// TODO people waiting on the elevator
-
 case class Building(score: Int = 0,
                     peopleWaitingTheElevator: Vector[Int] = Vector(0, 0, 0, 0, 0, 0),
                     peopleInTheElevator: Int = 0,
@@ -24,7 +22,7 @@ case class Building(score: Int = 0,
 
             this.copy(
                 users = new_user :: this.users,
-                peopleWaitingTheElevator = addPeopleWaitingTheElevator(new_user)
+                peopleWaitingTheElevator = addPeopleWaitingInTheElevator(new_user, this.peopleWaitingTheElevator)
             )
         }
     }
@@ -68,20 +66,20 @@ case class Building(score: Int = 0,
                     .getOrElse(0),
             users = new_building.users.filterNot(_.status == DONE),
             peopleInTheElevator = new_building.users.filter(_.status == TRAVELLING).size,
-            peopleWaitingTheElevator = buildVector(Vector(0,0,0,0,0,0), new_building.users.filter( _.status == WAITING ))
-
+            peopleWaitingTheElevator = buildPeopleWaitingTheElevator(Vector(0,0,0,0,0,0), new_building.users.filter( _.status == WAITING ))
         )
     }
 
-    private def addPeopleWaitingTheElevator(new_user: BuildingUser): Vector[Int] = {
-        val peopleNumberWaitingInFloor = this.peopleWaitingTheElevator.apply(new_user.from) + 1
-        this.peopleWaitingTheElevator.updated(new_user.from, peopleNumberWaitingInFloor)
+    private def addPeopleWaitingInTheElevator(new_user: BuildingUser, peopleWaiting: Vector[Int]): Vector[Int] = {
+        val peopleNumberWaitingInFloor = peopleWaiting.apply(new_user.from) + 1
+        peopleWaiting.updated(new_user.from, peopleNumberWaitingInFloor)
     }
 
-    private def buildVector(vector: Vector[Int], users: List[BuildingUser]): Vector[Int] = {
+    @tailrec
+    private def buildPeopleWaitingTheElevator(peopleWaitingTheElevator: Vector[Int], users: List[BuildingUser]): Vector[Int] = {
         users match {
-            case user :: tail => buildVector(vector.updated(user.from, vector.apply(user.from) + 1), tail)
-            case Nil => vector
+            case user :: tail => buildPeopleWaitingTheElevator(addPeopleWaitingInTheElevator(user, peopleWaitingTheElevator), tail)
+            case Nil => peopleWaitingTheElevator
         }
     }
 

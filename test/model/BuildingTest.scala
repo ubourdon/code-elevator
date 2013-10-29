@@ -2,7 +2,7 @@ package model
 
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
-import scalaz.{Validation, Failure, Success}
+import scalaz.{Failure, Success}
 import org.scalatest.mock.MockitoSugar
 import akka.testkit.{TestProbe, TestActorRef, TestKit}
 import actor.{ResetCause, Reset, SendEventToPlayer, EngineActor}
