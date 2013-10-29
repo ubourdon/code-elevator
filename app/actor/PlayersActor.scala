@@ -28,7 +28,7 @@ class PlayersActor(private var players: Set[PlayerInfo] = Set(), private var pla
     }
 
     private def createEngine(player: Player, serverUrl: String): ActorRef =
-        context.system.actorOf(Props(new EngineActor(player, serverUrl)), name=s"engine-${player.email}")
+        context.actorOf(Props(new EngineActor(player, serverUrl)), name=s"engine-${player.email}")
 }
 
 case class Register(player: Player, serverUrl: String)
