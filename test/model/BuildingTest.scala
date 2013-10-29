@@ -212,11 +212,13 @@ class BuildingTest extends TestKit(ActorSystem("test")) with FunSuite with Shoul
             .thenReturn(BuildingUser(null, 0, 1, tickToGo = 10, tickToWait = 0, status = DONE))
             .thenReturn(BuildingUser(null, 0, 1, tickToGo = 20, tickToWait = 20, status = DONE))
             .thenReturn(BuildingUser(null, 0, 1, tickToGo = 20, tickToWait = 20, status = DONE))
+            .thenReturn(BuildingUser(null, 0, 1, tickToGo = 0, tickToWait = 20, status = DONE))
 
         Building(users = List(user)).open().map(_.score) should be (20.success)
         Building(users = List(user)).open().map(_.score) should be (13.success)
         Building(users = List(user)).open().map(_.score) should be (0.success)
         Building(score = 1, users = List(user)).open().map(_.score) should be (1.success)
+        Building(users = List(user)).open().map(_.score) should be (13.success)
     }
 
     test("if user status is DONE when Building.open(), should delete this user") {

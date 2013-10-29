@@ -83,8 +83,9 @@ case class Building(score: Int = 0,
         }
     }
 
+    // TODO export in class
     private def score(user: BuildingUser): Int = {
-        val score = 20 - user.tickToWait - user.tickToGo + bestTickToGo(user.from, user.target)
+        val score = 20 - (user.tickToWait / 2) - user.tickToGo + bestTickToGo(user.from, user.target)
 
         if(score > 20) 20
         else if(score < 0) 0
