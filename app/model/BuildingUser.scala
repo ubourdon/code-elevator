@@ -6,6 +6,7 @@ import actor._
 import actor.Go
 import actor.CallPlayer
 import actor.SendEventToPlayer
+import scala.annotation.tailrec
 
 trait BuildingUserRandomCreator {
     def createUser(building: Building, parentActor: ActorRef, random: Random = new Random()): BuildingUser =
@@ -16,6 +17,7 @@ object BuildingUser {
     def randomCreate(building: Building, parentActor: ActorRef, random: Random = new Random()): BuildingUser = {
         val random_from = if(random.nextBoolean()) 0 else random.nextInt(building.maxFloor) + 1
         val random_to = {
+            @tailrec
             def to_different_of_from(): Int = {
                 val to = random.nextInt(building.maxFloor + 1)
                 if (to == random_from) to_different_of_from()

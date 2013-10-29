@@ -69,19 +69,4 @@ class BuildingUserTest extends TestKit(ActorSystem("test")) with FunSuite with S
 
         engine.expectMsg(SendEventToPlayer(UserHasExited))
     }
-
-    // créer User si limite pas dépassée
-    // BuildingUser(from, target, tickToWait, tickToGo, currentBuildingFloor, currentBuildingDoorsStatus, status: Waiting/travelling/DONE)
-
-    //dans le user
-    //à sa construction
-        // User.call vers le player    ?at=from&direction=up/down         // response 200 ok sinon RESET
-        // si porte ouverte et ascenseur à son étage d'origine => status = travelling & GET /userHasEntered + GET /go?floorToGo=[0-5]      // response 200 ok sinon RESET
-
-    // quand il est notifié
-    // envoi event             // response 200 ok sinon RESET
-
-    // score quand user sors de l'ascenseur envoie son score à building
-    // GET /userHasExited                                    // response 200 ok sinon RESET
-    //voir github score tests
 }

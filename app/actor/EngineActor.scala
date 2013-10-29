@@ -74,7 +74,7 @@ class EngineActor(private val player: Player,
             val new_building_valid = buildNewBuildingFromNextCommand(response)
 
             new_building_valid.map { new_building =>
-                building = new_building           // TODO !!! accès concurrent à building ???
+                building = new_building           // TODO !!! accès concurrent à building ???  USE ACTOR MESSAGE
                 updatePlayerInfo()
             }
         }
